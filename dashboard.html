@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderTaker — Kitchen Dashboard</title>
+<style>
+:root{
+  --bg:#0D0604;--card:#1A0E08;--card2:#220F08;--border:rgba(255,107,53,.15);
+  --accent:#FF6B35;--accent2:#E0541F;--text:#FFF5EE;--text2:#A8897A;
+  --green:#4ADE80;--yellow:#FBBF24;--blue:#60A5FA;--red:#F87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;min-height:100vh}
+
+/* HEADER */
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{font-size:20px;font-weight:800}
+.logo span{color:var(--accent)}
+.status-row{display:flex;align-items:center;gap:14px}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.restaurant-name{font-size:13px;color:var(--text2)}
+
+/* STATS BAR */
+.stats{display:flex;padding:18px 24px;gap:14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-right:14px}
+.stat:last-child{margin-right:0}
+.stat-val{font-size:28px;font-weight:900;letter-spacing:-1px}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.stat-val.green{color:var(--green)}
+.stat-val.accent{color:var(--accent)}
+.stat-val.yellow{color:var(--yellow)}
+
+/* COLUMNS */
+.board{display:flex;padding:20px;gap:16px;align-items:flex-start}
+.column{flex:1;min-width:280px;margin-right:16px}
+.column:last-child{margin-right:0}
+.col-header{display:flex;align-items:center;justify-content:space-between;padding:0 4px 14px}
+.col-title{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.col-count{background:var(--card2);border-radius:12px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--text2)}
+.col-title.new{color:var(--accent)}
+.col-title.prep{color:var(--yellow)}
+.col-title.ready{color:var(--green)}
+
+/* ORDER CARD */
+.order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;transition:border-color .2s}
+.order-card.new{border-left:3px solid var(--accent)}
+.order-card.prep{border-left:3px solid var(--yellow)}
+.order-card.ready{border-left:3px solid var(--green)}
+.order-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.order-id{font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px}
+.order-time{font-size:11px;color:var(--text2)}
+.order-customer{font-size:15px;font-weight:800;margin-bottom:2px}
+.order-phone{font-size:12px;color:var(--text2);margin-bottom:10px}
+.order-type{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:8px;margin-bottom:10px}
+.type-pickup{background:rgba(96,165,250,.12);color:var(--blue)}
+.type-delivery{background:rgba(167,139,250,.12);color:#A78BFA}
+.type-reservation{background:rgba(74,222,128,.12);color:var(--green)}
+.order-items{margin-bottom:10px}
+.item-line{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.item-line:last-child{border-bottom:none}
+.item-line.upsell{color:var(--green)}
+.item-line.upsell .item-name::before{content:'✨ '}
+.order-total{display:flex;justify-content:space-between;font-size:14px;font-weight:800;padding-top:8px;border-top:1px solid var(--border);margin-bottom:12px}
+.order-notes{font-size:12px;color:var(--text2);background:var(--card2);border-radius:8px;padding:8px 10px;margin-bottom:12px;line-height:1.5}
+.order-actions{display:flex}
+.action-btn{flex:1;padding:10px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:none;transition:opacity .15s;margin-right:8px}
+.action-btn:last-child{margin-right:0}
+.action-btn.primary{background:var(--accent);color:#1a0a00}
+.action-btn.primary:hover{opacity:.85}
+.action-btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.action-btn.secondary:hover{border-color:var(--accent)}
+.action-btn.success{background:var(--green);color:#052e16}
+
+/* RESERVATIONS PANEL */
+.reservations{padding:0 20px 30px}
+.res-header{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:14px}
+.res-list{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.res-row{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-time{font-size:14px;font-weight:800;width:80px;flex-shrink:0;color:var(--accent)}
+.res-info{flex:1}
+.res-name{font-size:14px;font-weight:700}
+.res-meta{font-size:12px;color:var(--text2);margin-top:2px}
+.res-party{background:var(--card2);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;flex-shrink:0}
+
+@media(max-width:900px){
+  .board{flex-direction:column}
+  .column{margin-right:0;margin-bottom:8px;min-width:auto}
+  .stats{flex-wrap:wrap}
+  .stat{min-width:45%;margin-right:8px;margin-bottom:8px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Order<span>Taker</span> — Kitchen</div>
+  <div class="status-row">
+    <span class="restaurant-name">Cairo Kitchen · Jersey City, NJ</span>
+    <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val accent">3</div>
+    <div class="stat-label">New Orders</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val yellow">2</div>
+    <div class="stat-label">Preparing</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val green">$50.50</div>
+    <div class="stat-label">Avg. Order Today</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">18</div>
+    <div class="stat-label">Calls Answered Today</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val green">$22</div>
+    <div class="stat-label">Upsell Revenue Today</div>
+  </div>
+</div>
+
+<div class="board">
+
+  <!-- NEW ORDERS -->
+  <div class="column">
+    <div class="col-header">
+      <span class="col-title new">🔴 New</span>
+      <span class="col-count">3</span>
+    </div>
+
+    <div class="order-card new">
+      <div class="order-top">
+        <span class="order-id">#1042</span>
+        <span class="order-time">Just now</span>
+      </div>
+      <div class="order-customer">Ahmed Hassan</div>
+      <div class="order-phone">(201) 555-0182</div>
+      <span class="order-type type-pickup">📦 PICKUP</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">2× Chicken Shawarma</span><span>$26.00</span></div>
+        <div class="item-line"><span class="item-name">1× Falafel Wrap</span><span>$11.00</span></div>
+        <div class="item-line"><span class="item-name">1× Hummus Plate</span><span>$9.50</span></div>
+        <div class="item-line upsell"><span class="item-name">1× Mint Lemonade</span><span>$4.00</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$50.50</span></div>
+      <div class="order-notes">📞 AI took order via phone · Read back & confirmed · SMS sent</div>
+      <div class="order-actions">
+        <button class="action-btn primary" onclick="moveOrder(this,'prep')">Start Preparing</button>
+      </div>
+    </div>
+
+    <div class="order-card new">
+      <div class="order-top">
+        <span class="order-id">#1043</span>
+        <span class="order-time">2 min ago</span>
+      </div>
+      <div class="order-customer">Sara Khalil</div>
+      <div class="order-phone">(551) 555-0341</div>
+      <span class="order-type type-delivery">🛵 DELIVERY</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">1× Lamb Platter</span><span>$18.00</span></div>
+        <div class="item-line"><span class="item-name">2× Pita Bread</span><span>$4.00</span></div>
+        <div class="item-line upsell"><span class="item-name">1× Baklava (2pc)</span><span>$5.50</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$27.50</span></div>
+      <div class="order-notes">📍 Deliver to: 412 Grove St, Apt 3B, Jersey City · No onions please</div>
+      <div class="order-actions">
+        <button class="action-btn primary" onclick="moveOrder(this,'prep')">Start Preparing</button>
+      </div>
+    </div>
+
+    <div class="order-card new">
+      <div class="order-top">
+        <span class="order-id">#1044</span>
+        <span class="order-time">Just now</span>
+      </div>
+      <div class="order-customer">Michael Torres</div>
+      <div class="order-phone">(917) 555-0276</div>
+      <span class="order-type type-pickup">📦 PICKUP</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">3× Beef Gyro</span><span>$33.00</span></div>
+        <div class="item-line"><span class="item-name">1× Greek Salad</span><span>$8.00</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$41.00</span></div>
+      <div class="order-notes">📞 AI offered drink upsell — customer declined</div>
+      <div class="order-actions">
+        <button class="action-btn primary" onclick="moveOrder(this,'prep')">Start Preparing</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREPARING -->
+  <div class="column">
+    <div class="col-header">
+      <span class="col-title prep">🟡 Preparing</span>
+      <span class="col-count">2</span>
+    </div>
+
+    <div class="order-card prep">
+      <div class="order-top">
+        <span class="order-id">#1040</span>
+        <span class="order-time">8 min ago</span>
+      </div>
+      <div class="order-customer">Lina Abboud</div>
+      <div class="order-phone">(201) 555-0099</div>
+      <span class="order-type type-pickup">📦 PICKUP</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">1× Mixed Grill Platter</span><span>$22.00</span></div>
+        <div class="item-line"><span class="item-name">2× Rice</span><span>$6.00</span></div>
+        <div class="item-line upsell"><span class="item-name">2× Mint Lemonade</span><span>$8.00</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$36.00</span></div>
+      <div class="order-notes">⏱️ Quoted: ready in ~20 min · Pickup ETA 1:48 PM</div>
+      <div class="order-actions">
+        <button class="action-btn success" onclick="moveOrder(this,'ready')">Mark Ready</button>
+        <button class="action-btn secondary" onclick="moveOrder(this,'new')">↩ Back</button>
+      </div>
+    </div>
+
+    <div class="order-card prep">
+      <div class="order-top">
+        <span class="order-id">#1041</span>
+        <span class="order-time">5 min ago</span>
+      </div>
+      <div class="order-customer">Joseph Reyes</div>
+      <div class="order-phone">(646) 555-0157</div>
+      <span class="order-type type-delivery">🛵 DELIVERY</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">1× Chicken Shawarma Wrap</span><span>$13.00</span></div>
+        <div class="item-line"><span class="item-name">1× Fries</span><span>$4.50</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$17.50</span></div>
+      <div class="order-notes">📍 Deliver to: 88 Hudson St, Hoboken · Buzzer #6</div>
+      <div class="order-actions">
+        <button class="action-btn success" onclick="moveOrder(this,'ready')">Mark Ready</button>
+        <button class="action-btn secondary" onclick="moveOrder(this,'new')">↩ Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- READY -->
+  <div class="column">
+    <div class="col-header">
+      <span class="col-title ready">🟢 Ready / Out</span>
+      <span class="col-count">1</span>
+    </div>
+
+    <div class="order-card ready">
+      <div class="order-top">
+        <span class="order-id">#1039</span>
+        <span class="order-time">12 min ago</span>
+      </div>
+      <div class="order-customer">Fatima Noor</div>
+      <div class="order-phone">(973) 555-0214</div>
+      <span class="order-type type-pickup">📦 PICKUP</span>
+      <div class="order-items">
+        <div class="item-line"><span class="item-name">2× Falafel Wrap</span><span>$22.00</span></div>
+        <div class="item-line"><span class="item-name">1× Hummus Plate</span><span>$9.50</span></div>
+      </div>
+      <div class="order-total"><span>Total</span><span>$31.50</span></div>
+      <div class="order-notes">✅ Customer notified via SMS — ready for pickup</div>
+      <div class="order-actions">
+        <button class="action-btn secondary" onclick="completeOrder(this)">Mark Picked Up ✓</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESERVATIONS -->
+<div class="reservations">
+  <div class="res-header">📅 Today's Reservations</div>
+  <div class="res-list">
+    <div class="res-row">
+      <div class="res-time">6:30 PM</div>
+      <div class="res-info">
+        <div class="res-name">Karim & Family</div>
+        <div class="res-meta">(201) 555-0301 · Booked via phone AI</div>
+      </div>
+      <div class="res-party">4 guests</div>
+    </div>
+    <div class="res-row">
+      <div class="res-time">7:00 PM</div>
+      <div class="res-info">
+        <div class="res-name">Patricia Lee</div>
+        <div class="res-meta">(917) 555-0089 · Booked via phone AI · Window seat requested</div>
+      </div>
+      <div class="res-party">2 guests</div>
+    </div>
+    <div class="res-row">
+      <div class="res-time">8:15 PM</div>
+      <div class="res-info">
+        <div class="res-name">Hassan Group</div>
+        <div class="res-meta">(551) 555-0445 · Booked via phone AI · Birthday celebration</div>
+      </div>
+      <div class="res-party">8 guests</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function moveOrder(btn, status) {
+  const card = btn.closest('.order-card');
+  card.style.transition = 'opacity .3s, transform .3s';
+  card.style.opacity = '0';
+  card.style.transform = 'translateX(20px)';
+  setTimeout(() => {
+    card.classList.remove('new','prep','ready');
+    card.classList.add(status);
+    card.style.opacity = '1';
+    card.style.transform = 'none';
+
+    // Rebuild buttons based on status
+    const actions = card.querySelector('.order-actions');
+    if (status === 'prep') {
+      actions.innerHTML = `
+        <button class="action-btn success" onclick="moveOrder(this,'ready')">Mark Ready</button>
+        <button class="action-btn secondary" onclick="moveOrder(this,'new')">↩ Back</button>`;
+    } else if (status === 'ready') {
+      actions.innerHTML = `<button class="action-btn secondary" onclick="completeOrder(this)">Mark Picked Up ✓</button>`;
+    } else if (status === 'new') {
+      actions.innerHTML = `<button class="action-btn primary" onclick="moveOrder(this,'prep')">Start Preparing</button>`;
+    }
+
+    // Move card to correct column
+    const targetCol = document.querySelectorAll('.column')[status === 'new' ? 0 : status === 'prep' ? 1 : 2];
+    targetCol.appendChild(card);
+    updateCounts();
+  }, 300);
+}
+
+function completeOrder(btn) {
+  const card = btn.closest('.order-card');
+  card.style.transition = 'opacity .3s, transform .3s';
+  card.style.opacity = '0';
+  card.style.transform = 'scale(.95)';
+  setTimeout(() => { card.remove(); updateCounts(); }, 300);
+}
+
+function updateCounts() {
+  document.querySelectorAll('.column').forEach((col, i) => {
+    const count = col.querySelectorAll('.order-card').length;
+    col.querySelector('.col-count').textContent = count;
+  });
+}
+
+// Simulate new order arriving every 25s (demo only)
+const newOrderPool = [
+  {id:'#1045', name:'David Cohen', phone:'(201) 555-0418', type:'pickup', items:[['1× Chicken Shawarma','$13.00'],['1× Fries','$4.50']], upsell:['1× Mint Lemonade','$4.00'], total:'$21.50', note:'📞 AI offered upsell — accepted'},
+  {id:'#1046', name:'Yara Saleh', phone:'(917) 555-0532', type:'delivery', items:[['2× Falafel Wrap','$22.00'],['1× Baklava','$3.00']], upsell:null, total:'$25.00', note:'📍 Deliver to: 200 Newark Ave, JC'},
+];
+let poolIndex = 0;
+function simulateNewOrder() {
+  if (poolIndex >= newOrderPool.length) return;
+  const o = newOrderPool[poolIndex++];
+  const col = document.querySelectorAll('.column')[0];
+  const card = document.createElement('div');
+  card.className = 'order-card new';
+  card.style.opacity = '0';
+  let itemsHtml = o.items.map(([n,p]) => `<div class="item-line"><span class="item-name">${n}</span><span>${p}</span></div>`).join('');
+  if (o.upsell) itemsHtml += `<div class="item-line upsell"><span class="item-name">${o.upsell[0]}</span><span>${o.upsell[1]}</span></div>`;
+  const typeLabel = o.type === 'pickup' ? '<span class="order-type type-pickup">📦 PICKUP</span>' : '<span class="order-type type-delivery">🛵 DELIVERY</span>';
+  card.innerHTML = `
+    <div class="order-top"><span class="order-id">${o.id}</span><span class="order-time">Just now</span></div>
+    <div class="order-customer">${o.name}</div>
+    <div class="order-phone">${o.phone}</div>
+    ${typeLabel}
+    <div class="order-items">${itemsHtml}</div>
+    <div class="order-total"><span>Total</span><span>${o.total}</span></div>
+    <div class="order-notes">${o.note}</div>
+    <div class="order-actions"><button class="action-btn primary" onclick="moveOrder(this,'prep')">Start Preparing</button></div>
+  `;
+  col.insertBefore(card, col.firstChild);
+  setTimeout(() => card.style.opacity = '1', 50);
+  updateCounts();
+}
+setInterval(simulateNewOrder, 25000);
+</script>
+</body>
+</html>
