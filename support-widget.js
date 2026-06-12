@@ -53,12 +53,13 @@
   document.head.appendChild(styleEl);
 
   const RESPONSES = {
-    'pricing': "OrderTaker is <strong>$199/month per restaurant</strong> — unlimited calls, orders, reservations, and the kitchen dashboard included. Have multiple locations? Each additional one is 15% off ($169.15/month).",
+    'pricing': "OrderTaker is <strong>$199/month per restaurant</strong> — unlimited simultaneous calls, orders, reservations, after-hours pre-orders, owner/staff alerts, and the kitchen dashboard included. Have multiple locations? Each additional one is 15% off ($169.15/month).",
+    'signup': "Great! Tap the \"Get OrderTaker — $199/month\" button on this page and our team will reach out to get your restaurant set up within 24 hours.",
     'setup': "Setup takes about 24 hours: sign up online, we train the AI on your menu and policies, then you forward your existing phone number to us. No new hardware needed.",
     'pos': "OrderTaker works with <strong>any restaurant out of the box</strong> — no POS integration required. Orders show up on your tablet dashboard instantly. Direct Toast & Square integration is coming soon at no extra charge.",
     'languages': "OrderTaker currently answers in <strong>English, Spanish, and Arabic</strong>, automatically detecting the caller's language. More languages available on request.",
-    'human': "I'll connect you with our team — email <a href='mailto:hello@niledreamsdigital.com'>hello@niledreamsdigital.com</a> and we'll respond within one business day. For urgent issues, mention \"URGENT\" in your subject line.",
-    'default': "Thanks for your message! For detailed help, email <a href='mailto:hello@niledreamsdigital.com'>hello@niledreamsdigital.com</a> and our team will get back to you within one business day. In the meantime, here are some common topics:"
+    'human': "No problem — leave a quick reply here describing what you need, or use the \"Get OrderTaker\" button on this page and a real person from our team will follow up with you directly.",
+    'default': "Thanks for your message! Our team typically responds within one business day. In the meantime, here are some common topics:"
   };
 
   function buildWidget() {
@@ -83,12 +84,13 @@
             <span class="ot-quick-reply" data-q="setup">Setup process</span>
             <span class="ot-quick-reply" data-q="pos">POS compatibility</span>
             <span class="ot-quick-reply" data-q="languages">Languages</span>
+            <span class="ot-quick-reply" data-q="signup">Get started</span>
             <span class="ot-quick-reply" data-q="human">Talk to a human</span>
           </div>
         </div>
       </div>
       <div class="ot-support-footer">
-        Or email us directly: <a href="mailto:hello@niledreamsdigital.com">hello@niledreamsdigital.com</a>
+        We typically respond within one business day.
       </div>
     `;
 

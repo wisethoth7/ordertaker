@@ -103,7 +103,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:16px
 <header>
   <div class="logo" style="display:flex;align-items:center;gap:8px"><img src="icons/ot-icon-72.png" alt="" style="width:26px;height:26px;border-radius:6px">Order<span>Taker</span> — Kitchen</div>
   <div class="status-row">
-    <span class="restaurant-name">Cairo Kitchen · Jersey City, NJ</span>
+    <span class="restaurant-name">Mario Kitchen · Jersey City, NJ</span>
     <div class="live-badge"><span class="live-dot"></span> LIVE</div>
   </div>
 </header>
@@ -347,7 +347,7 @@ async function init() {
   const { data: rest, error } = await sb
     .from('ot_restaurants')
     .select('id,name,city')
-    .eq('name', 'Cairo Kitchen')
+    .eq('name', 'Mario Kitchen')
     .limit(1)
     .single();
 
