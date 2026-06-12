@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OrderTaker — AI Phone Agent for Restaurants</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF6B35">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/ot-icon-96.png">
 <meta name="description" content="OrderTaker answers your restaurant's phone 24/7. Takes orders, handles reservations, sends instant confirmations. $299/month flat.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#B91C1C">
@@ -97,7 +101,7 @@
   .hero-note { margin-top: 16px; font-size: 12px; color: var(--text2); }
 
   /* PHONE MOCKUP */
-  .phone-section { padding: 0 24px 80px; display: flex; justify-content: center; }
+  .phone-section { padding: 0 24px 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .phone-wrap { position: relative; max-width: 320px; }
   .phone {
     width: 280px; background: #1A0707; border-radius: 36px;
@@ -135,10 +139,10 @@
     border-radius: 8px; text-align: center; margin-top: 12px;
   }
   .sms-badge {
-    position: absolute; right: -20px; top: 60px;
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 10px 14px;
-    font-size: 11px; color: var(--text2); width: 160px;
+    font-size: 11px; color: var(--text2); max-width: 280px;
+    margin: 16px auto 0; text-align: center;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
   .sms-header { color: var(--green); font-weight: 700; font-size: 10px; margin-bottom: 4px; }
@@ -277,7 +281,6 @@
     .price-grid .price-card { margin-right: 0; }
     .steps { grid-template-columns: repeat(2, 1fr); gap: 24px; }
     .steps::before { display: none; }
-    .sms-badge { display: none; }
     footer { flex-direction: column; gap: 10px; text-align: center; }
   }
 </style>
@@ -286,7 +289,7 @@
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">Order<span>Taker</span></div>
+  <div class="nav-logo" style="display:flex;align-items:center;gap:8px"><img src="icons/ot-icon-72.png" alt="" style="width:28px;height:28px;border-radius:7px">Order<span>Taker</span></div>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How it works</a></li>
@@ -302,7 +305,7 @@
   <h1>Your Phone Rings.<br><span class="highlight">AI Answers.</span><br>Orders Flow.</h1>
   <p class="hero-sub">OrderTaker picks up every call 24/7. Takes pickup and delivery orders, handles reservations, and sends instant SMS confirmations — without a single staff member touching the phone.</p>
   <div class="hero-actions">
-    <a href="#pricing" class="btn-primary">Plans from $199/month</a>
+    <a href="#pricing" class="btn-primary">Start for $199/month</a>
     <a href="#how" class="btn-secondary">See how it works</a>
   </div>
   <p class="hero-note">Flat rate · No per-minute fees · Works with your existing number</p>
@@ -399,7 +402,7 @@
       <div class="feat-card">
         <div class="feat-icon">🔌</div>
         <div class="feat-title">Works With Any POS</div>
-        <div class="feat-body">No integration required — orders land on your tablet dashboard instantly, formatted for your kitchen. Direct Toast & Square integration coming soon for Restaurant Plan customers.</div>
+        <div class="feat-body">No integration required — orders land on your tablet dashboard instantly, formatted for your kitchen. Direct Toast & Square integration coming soon at no extra charge.</div>
       </div>
     </div>
   </div>
@@ -439,54 +442,37 @@
 <!-- PRICING -->
 <div id="pricing" class="pricing-section">
   <div class="section-label">PRICING</div>
-  <h2>Two plans.<br>No surprises.</h2>
-  <p class="section-sub" style="margin:0 auto 40px">Most answering services charge by the minute. We don't. Pick the plan that fits how your restaurant takes orders.</p>
-  <div class="price-grid">
+  <h2>One flat price.<br>No surprises.</h2>
+  <p class="section-sub" style="margin:0 auto 40px">Most answering services charge by the minute. We don't. One flat monthly rate per restaurant — everything included.</p>
 
-    <!-- STARTER -->
-    <div class="price-card">
-      <div class="price-name">STARTER</div>
-      <div>
-        <span class="price-amount">$199</span>
-        <span class="price-period">/month</span>
-      </div>
-      <p class="price-note">Per location · Cancel anytime · No contracts</p>
-      <div class="price-includes">
-        <div class="price-line">Unlimited calls — no per-minute fees</div>
-        <div class="price-line">AI answers and takes the order by phone</div>
-        <div class="price-line">SMS confirmation sent to customer</div>
-        <div class="price-line">English, Spanish & Arabic support</div>
-        <div class="price-line">24/7 coverage including holidays</div>
-        <div class="price-line">Onboarding + setup included</div>
-      </div>
-      <a href="mailto:hello@niledreamsdigital.com?subject=OrderTaker%20Starter%20Signup" class="btn-secondary" style="display:block;text-align:center;font-size:15px;padding:14px">
-        Get Starter — $199/month
-      </a>
+  <div class="price-card featured" style="max-width:440px;margin:0 auto">
+    <div class="price-badge">ALL-INCLUDED</div>
+    <div class="price-name">ORDERTAKER</div>
+    <div>
+      <span class="price-amount">$199</span>
+      <span class="price-period">/month per restaurant</span>
     </div>
-
-    <!-- RESTAURANT (FEATURED) -->
-    <div class="price-card featured">
-      <div class="price-badge">MOST POPULAR</div>
-      <div class="price-name">RESTAURANT PLAN</div>
-      <div>
-        <span class="price-amount">$299</span>
-        <span class="price-period">/month</span>
-      </div>
-      <p class="price-note">Per location · Cancel anytime · No contracts</p>
-      <div class="price-includes">
-        <div class="price-line">Everything in Starter, plus:</div>
-        <div class="price-line">Pickup & delivery order details + reservations</div>
-        <div class="price-line">Live kitchen tablet dashboard</div>
-        <div class="price-line">Email + SMS confirmations</div>
-        <div class="price-line">Smart upsell prompts ("add a drink?")</div>
-        <div class="price-line">Wait-time quotes to callers</div>
-      </div>
-      <a href="mailto:hello@niledreamsdigital.com?subject=OrderTaker%20Restaurant%20Signup" class="btn-primary" style="display:block;text-align:center;font-size:15px;padding:14px">
-        Get OrderTaker — $299/month
-      </a>
+    <p class="price-note">Cancel anytime · No contracts · Onboarding included</p>
+    <div class="price-includes">
+      <div class="price-line">Unlimited calls — no per-minute fees</div>
+      <div class="price-line">Pickup & delivery orders + reservations</div>
+      <div class="price-line">Live kitchen tablet dashboard</div>
+      <div class="price-line">SMS + email confirmations for every order</div>
+      <div class="price-line">Smart upsell prompts ("add a drink?")</div>
+      <div class="price-line">Wait-time quotes to callers</div>
+      <div class="price-line">English, Spanish & Arabic support</div>
+      <div class="price-line">24/7 coverage including holidays</div>
     </div>
-
+    <a href="mailto:hello@niledreamsdigital.com?subject=OrderTaker%20Signup" class="btn-primary" style="display:block;text-align:center;font-size:15px;padding:14px">
+      Get OrderTaker — $199/month
+    </a>
   </div>
+
+  <div style="max-width:440px;margin:24px auto 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;text-align:left">
+    <div style="font-size:14px;font-weight:800;margin-bottom:6px">🏬 Multiple Locations?</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6">Get <strong style="color:var(--accent)">15% off every additional location</strong>. First restaurant is $199/month, each additional location is $169.15/month — billed together, managed from one account.</div>
+  </div>
+
   <p style="text-align:center;margin-top:24px;font-size:12px;color:var(--text2)">
     Questions? Email <a href="mailto:hello@niledreamsdigital.com" style="color:var(--accent)">hello@niledreamsdigital.com</a>
   </p>
@@ -518,16 +504,16 @@
       <div class="faq-a">You set your hours during onboarding. During open hours, the AI takes live orders. After closing, it can take pre-orders for the next day or inform callers of your hours and take a callback number.</div>
     </div>
     <div class="faq-item">
-      <div class="faq-q">What's the difference between Starter and the Restaurant Plan?</div>
-      <div class="faq-a">Starter ($199/mo) answers calls, takes the order, and texts the customer a confirmation — great if you just need a reliable answering service. The Restaurant Plan ($299/mo) adds the live kitchen tablet dashboard, reservation handling, smart upsell prompts, and wait-time quotes — built for busy kitchens that want orders flowing straight to the line.</div>
+      <div class="faq-q">I have more than one restaurant. How does pricing work?</div>
+      <div class="faq-a">Your first location is $199/month. Every additional location gets 15% off — $169.15/month each — billed together on one account so you can manage all your restaurants' orders and dashboards in one place.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">Does OrderTaker integrate with my POS system (Toast, Square, Clover)?</div>
-      <div class="faq-a">OrderTaker works with any restaurant out of the box — no POS integration is required. Orders appear on a dedicated tablet dashboard, formatted for your kitchen, so staff can read and prep immediately. Direct POS integrations (starting with Toast and Square) are in development for Restaurant Plan customers and will roll out at no extra charge as they become available.</div>
+      <div class="faq-a">OrderTaker works with any restaurant out of the box — no POS integration is required. Orders appear on a dedicated tablet dashboard, formatted for your kitchen, so staff can read and prep immediately. Direct POS integrations (starting with Toast and Square) are in development and will roll out to all customers at no extra charge as they become available.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">Does the AI try to upsell customers?</div>
-      <div class="faq-a">On the Restaurant Plan, yes — the AI can suggest relevant add-ons (like a drink or side) based on what's ordered, using prompts you approve during setup. This is optional and fully customizable to match your menu and tone.</div>
+      <div class="faq-a">Yes — the AI can suggest relevant add-ons (like a drink or side) based on what's ordered, using prompts you approve during setup. This is optional and fully customizable to match your menu and tone.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">Is there a contract or setup fee?</div>
@@ -561,5 +547,6 @@
     });
   });
 </script>
+<script src="support-widget.js"></script>
 </body>
 </html>
