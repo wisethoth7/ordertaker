@@ -156,6 +156,18 @@
   .proof-items { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
   .proof-item { font-size: 18px; font-weight: 800; color: rgba(255,255,255,0.15); letter-spacing: -0.5px; }
 
+  /* ROI */
+  .roi-section { padding: 70px 48px; max-width: 1000px; margin: 0 auto; }
+  .roi-grid { display: flex; margin-top: 36px; }
+  .roi-stat {
+    flex: 1; text-align: center; background: var(--card);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 20px; margin-right: 20px;
+  }
+  .roi-stat:last-child { margin-right: 0; }
+  .roi-num { font-size: 40px; font-weight: 900; color: var(--accent); letter-spacing: -1px; margin-bottom: 10px; }
+  .roi-label { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
   /* FEATURES */
   .section { padding: 80px 48px; max-width: 1100px; margin: 0 auto; }
   .section-label {
@@ -279,6 +291,8 @@
     .features-grid .feat-card { width: 100%; margin-right: 0; }
     .price-grid { flex-direction: column; }
     .price-grid .price-card { margin-right: 0; }
+    .roi-grid { flex-direction: column; }
+    .roi-stat { margin-right: 0; margin-bottom: 16px; }
     .steps { grid-template-columns: repeat(2, 1fr); gap: 24px; }
     .steps::before { display: none; }
     footer { flex-direction: column; gap: 10px; text-align: center; }
@@ -360,6 +374,29 @@
     <span class="proof-item">Fine Dining</span>
     <span class="proof-item">Cafés</span>
   </div>
+</div>
+
+<!-- ROI STATS -->
+<div class="roi-section">
+  <div class="section-label" style="text-align:center">WHY IT PAYS FOR ITSELF</div>
+  <h2 style="text-align:center">Every missed call is<br>an order walking to a competitor.</h2>
+  <div class="roi-grid">
+    <div class="roi-stat">
+      <div class="roi-num">43%</div>
+      <div class="roi-label">of restaurant calls go unanswered during peak hours</div>
+    </div>
+    <div class="roi-stat">
+      <div class="roi-num">$25–45</div>
+      <div class="roi-label">average order value lost with every missed call</div>
+    </div>
+    <div class="roi-stat">
+      <div class="roi-num">100%</div>
+      <div class="roi-label">of calls answered instantly, 24/7 — no hold music, no voicemail</div>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--text2);font-size:14px;margin-top:24px">
+    Recover just <strong style="color:var(--accent)">5 missed orders a month</strong> and OrderTaker has already paid for itself.
+  </p>
 </div>
 
 <!-- FEATURES -->
@@ -470,7 +507,7 @@
 
   <div style="max-width:440px;margin:24px auto 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;text-align:left">
     <div style="font-size:14px;font-weight:800;margin-bottom:6px">🏬 Multiple Locations?</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.6">Get <strong style="color:var(--accent)">15% off every additional location</strong>. First restaurant is $199/month, each additional location is $169.15/month — billed together, managed from one account.</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6">Get <strong style="color:var(--accent)">15% off every additional location</strong>. First restaurant is $199/month, each additional location is $169.15/month — billed together and managed from a single centralized dashboard across all your locations.</div>
   </div>
 
   <p style="text-align:center;margin-top:24px;font-size:12px;color:var(--text2)">
@@ -514,6 +551,10 @@
     <div class="faq-item">
       <div class="faq-q">Does the AI try to upsell customers?</div>
       <div class="faq-a">Yes — the AI can suggest relevant add-ons (like a drink or side) based on what's ordered, using prompts you approve during setup. This is optional and fully customizable to match your menu and tone.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What if a customer has a complaint or unusual request?</div>
+      <div class="faq-a">OrderTaker is built for the routine volume — orders, reservations, hours, and menu questions. If a caller has a complaint, a complex custom request, or asks for a manager, the AI politely takes their name and number and flags it for your team to call back, rather than guessing. You can also set up live transfer to a manager's line during business hours.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">Is there a contract or setup fee?</div>
