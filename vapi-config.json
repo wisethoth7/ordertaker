@@ -1,0 +1,236 @@
+{
+  "name": "OrderTaker — Mario Kitchen",
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "temperature": 0.3,
+    "systemPrompt": "You are the AI phone agent for Mario Kitchen, a Mediterranean restaurant. Your name is not important — you are simply the voice of Mario Kitchen.\n\nYour personality: warm, efficient, friendly. You sound like a real person working at the restaurant — not robotic, not overly formal. Conversational and natural. Use short sentences. Keep the call moving.\n\n== CALL FLOW ==\n\n1. GREETING (first message, already set below)\n\n2. ORDER TYPE\nAfter caller says pickup or delivery:\n- Pickup: ask \"Great! Can I get your name and a callback number?\"\n- Delivery: ask \"Perfect! What's the delivery address? And I'll need your name and best number to reach you.\"\nCollect name + phone (+ address for delivery). Then say: \"What can I get for you?\"\n\n3. TAKING THE ORDER\n- Listen carefully to each item. Confirm quantities and any modifications.\n- After each item, say \"Got it\" and ask \"Anything else?\"\n- If caller asks about an item you don't have in the menu, say \"We don't have that one, but I can check what else we have — would you like to hear our [category]?\"\n- Call get_menu() if you need to look something up.\n- Keep going until caller says they're done.\n\n4. UPSELL (once per call, natural not pushy)\nAfter caller says they're done, suggest ONE relevant add-on:\n- If no drink ordered: \"Can I add a Mint Lemonade for $4?\"\n- If no side ordered: \"Would you like to add Fries for $4.50 or Hummus Plate for $9.50?\"\n- If no dessert and order is over $20: \"We have Baklava — two pieces for $5.50, would you like to add that?\"\nIf they decline, say \"No problem!\" and move on. Never suggest more than once.\n\n5. READ BACK THE ORDER\nRead back every item with quantities and price. Give the subtotal.\nExample: \"Alright, I have: 2 Chicken Shawarma at $13 each, 1 Hummus Plate at $9.50, and 1 Mint Lemonade at $4. That comes to $39.50 before tax. Does that sound right?\"\n\n6. WAIT TIME\nAfter confirmation, call get_wait_time() and say:\n- Pickup: \"Your order will be ready in about [X] minutes.\"\n- Delivery: \"Delivery will be there in approximately [X] minutes.\"\n\n7. CONFIRM AND CLOSE\nCall create_order() to save the order, then call send_confirmation() to send the SMS.\nSay: \"I've sent a confirmation to your phone. Thank you for calling Mario Kitchen — we'll see you soon!\"\nThen end the call.\n\n== RESERVATIONS ==\nIf caller asks about a reservation:\n- Ask: party size, date, time, name, phone number.\n- Call create_reservation() to check availability and book.\n- Confirm: \"You're all set — reservation for [X] on [date] at [time] under [name]. See you then!\"\n\n== HOURS & INFO ==\nIf asked about hours: \"We're open Monday through Sunday, 11am to 10pm.\"\nIf asked about address: \"We're at 123 Mediterranean Ave. I can text you the details — would that help?\"\nIf asked about parking: \"There's street parking right out front and a lot around the corner.\"\n\n== AFTER HOURS ==\nIf it's outside business hours:\nSay: \"Hi, thanks for calling Mario Kitchen! We're currently closed. Our hours are Monday through Sunday, 11am to 10pm. I can take a pre-order for when we open — would you like to do that?\"\nIf yes: take the order normally, then call create_order() with status='scheduled'.\n\n== WRONG NUMBER ==\nIf caller says wrong number or asks for a completely unrelated business:\nSay: \"Oh no worries at all! Have a great day.\" Then end the call immediately.\nDo NOT say anything else. Do NOT try to upsell or redirect. Just end it.\n\n== COMPLAINTS / MANAGER REQUESTS ==\nIf caller is upset or asks for a manager:\nSay: \"I completely understand, and I want to make sure this gets handled properly. Let me take your name and number and have our manager call you right back — what's the best number to reach you?\"\nCall flag_for_callback() with reason='complaint'.\n\n== ROBOCALLS / SPAM ==\nIf no human responds within 5 seconds, or if you detect automated speech/silence:\nSay nothing. End the call.\n\n== LANGUAGE ==\nIf caller speaks Spanish, switch to Spanish entirely.\nIf caller speaks Arabic, switch to Arabic entirely.\nMatch the caller's language for the rest of the call.\n\n== RULES ==\n- Never make up menu items or prices. Always call get_menu() if uncertain.\n- Never promise discounts or free items unless manager authorized.\n- Keep responses SHORT. This is a phone call, not a chat.\n- Never say \"I am an AI\" unless directly and specifically asked. If asked, say \"I'm the ordering system for Mario Kitchen.\"\n- Always confirm the order before creating it.\n- Never repeat yourself more than once on the same point."
+  },
+  "voice": {
+    "provider": "cartesia",
+    "voiceId": "79a125e8-cd45-4c13-8a67-188112f4dd22",
+    "speed": 1.0,
+    "emotion": "positivity:medium"
+  },
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "multi",
+    "smartFormat": true,
+    "punctuate": true
+  },
+  "firstMessage": "Thanks for calling Mario Kitchen! Are you looking to place an order for pickup or delivery?",
+  "endCallMessage": "Thank you for calling Mario Kitchen — we'll see you soon!",
+  "endCallPhrases": [
+    "goodbye",
+    "bye",
+    "have a good day",
+    "talk to you later",
+    "that's all",
+    "that's everything",
+    "we're done",
+    "wrong number"
+  ],
+  "silenceTimeoutSeconds": 20,
+  "maxDurationSeconds": 600,
+  "backgroundSound": "restaurant",
+  "backchannelingEnabled": true,
+  "backgroundDenoisingEnabled": true,
+  "hipaaEnabled": false,
+  "startSpeakingPlan": {
+    "waitSeconds": 0.4,
+    "smartEndpointingEnabled": true
+  },
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_menu",
+        "description": "Fetch the full menu for this restaurant. Call this when the customer asks what's available, asks about a specific item, or when you need to verify pricing.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional: filter by category (entree, side, drink, dessert). Omit to get full menu.",
+              "enum": ["entree", "side", "drink", "dessert"]
+            }
+          },
+          "required": []
+        }
+      },
+      "async": false,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "get_menu"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_wait_time",
+        "description": "Get the current estimated wait time for pickup or delivery.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "order_type": {
+              "type": "string",
+              "enum": ["pickup", "delivery"],
+              "description": "Whether this is a pickup or delivery order."
+            }
+          },
+          "required": ["order_type"]
+        }
+      },
+      "async": false,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "get_wait_time"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_order",
+        "description": "Save the confirmed order to the kitchen dashboard. Only call this AFTER reading back the order and getting customer confirmation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_name": {
+              "type": "string",
+              "description": "Customer's first name (and last if given)."
+            },
+            "customer_phone": {
+              "type": "string",
+              "description": "Customer's callback phone number."
+            },
+            "order_type": {
+              "type": "string",
+              "enum": ["pickup", "delivery", "scheduled"],
+              "description": "pickup = immediate, delivery = delivery address required, scheduled = after-hours pre-order."
+            },
+            "delivery_address": {
+              "type": "string",
+              "description": "Full delivery address. Required if order_type is delivery."
+            },
+            "scheduled_for": {
+              "type": "string",
+              "description": "ISO datetime for scheduled pre-orders (after hours). Leave empty for immediate orders."
+            },
+            "items": {
+              "type": "array",
+              "description": "Array of ordered items.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "description": "Exact menu item name." },
+                  "quantity": { "type": "integer", "description": "Number of this item." },
+                  "modifications": { "type": "string", "description": "Any special instructions (no onions, extra sauce, etc)." },
+                  "unit_price": { "type": "number", "description": "Price per item." }
+                },
+                "required": ["name", "quantity", "unit_price"]
+              }
+            },
+            "special_instructions": {
+              "type": "string",
+              "description": "Any overall order notes from the customer."
+            }
+          },
+          "required": ["customer_name", "customer_phone", "order_type", "items"]
+        }
+      },
+      "async": true,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "create_order"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_reservation",
+        "description": "Book a table reservation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_name": { "type": "string" },
+            "customer_phone": { "type": "string" },
+            "party_size": { "type": "integer", "description": "Number of guests." },
+            "reservation_date": { "type": "string", "description": "Date in YYYY-MM-DD format." },
+            "reservation_time": { "type": "string", "description": "Time in HH:MM 24h format." },
+            "notes": { "type": "string", "description": "Any special requests (high chair, birthday, allergy)." }
+          },
+          "required": ["customer_name", "customer_phone", "party_size", "reservation_date", "reservation_time"]
+        }
+      },
+      "async": true,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "create_reservation"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_confirmation",
+        "description": "Send an SMS confirmation to the customer after order is placed. Call this right after create_order succeeds.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_phone": { "type": "string" },
+            "customer_name": { "type": "string" },
+            "order_type": { "type": "string", "enum": ["pickup", "delivery", "scheduled"] },
+            "items_summary": { "type": "string", "description": "Short summary like: 2x Chicken Shawarma, 1x Hummus Plate" },
+            "total": { "type": "number", "description": "Order subtotal before tax." },
+            "wait_minutes": { "type": "integer", "description": "Estimated wait time in minutes." }
+          },
+          "required": ["customer_phone", "customer_name", "order_type", "items_summary", "total"]
+        }
+      },
+      "async": true,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "send_confirmation"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "flag_for_callback",
+        "description": "Log a callback request when a customer has a complaint or asks for a manager.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_name": { "type": "string" },
+            "customer_phone": { "type": "string" },
+            "reason": { "type": "string", "enum": ["complaint", "manager_request", "complex_request", "other"] },
+            "notes": { "type": "string", "description": "What the customer said or what the issue is." }
+          },
+          "required": ["customer_phone", "reason"]
+        }
+      },
+      "async": true,
+      "server": {
+        "url": "https://hvyfeebazmiqateniupm.supabase.co/functions/v1/ordertaker-tools",
+        "headers": {
+          "x-tool-name": "flag_for_callback"
+        }
+      }
+    }
+  ],
+  "analysisPlan": {
+    "summaryPrompt": "Summarize this restaurant phone call in 2 sentences: what did the customer order/request, and was it resolved successfully?",
+    "successEvaluationPrompt": "Did the call result in a completed order, confirmed reservation, or properly handled inquiry? Answer yes or no.",
+    "structuredDataPrompt": "Extract: order_placed (bool), reservation_made (bool), complaint_flagged (bool), call_type (order/reservation/inquiry/wrong_number/complaint), language_used (english/spanish/arabic/other)"
+  }
+}
