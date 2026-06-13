@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/ot-icon-96.png">
 <meta name="description" content="Start your 7-day free trial of OrderTaker — the AI phone agent that answers your restaurant's calls 24/7.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root {
     --bg: #0A0303;
@@ -211,11 +212,38 @@
 </footer>
 
 <script>
-  document.getElementById('signupForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    document.getElementById('signupForm').style.display = 'none';
-    document.getElementById('successCard').style.display = 'block';
-  });
+const SUPABASE_URL = 'https://hvyfeebazmiqateniupm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eWZlZWJhem1pcWF0ZW5pdXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMTI2MTcsImV4cCI6MjA5NTY4ODYxN30.89qqEshOwp1bU2AQbzSpZ36_TuqP2jVULo_9Ug-S9_c';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  const data = {
+    restaurant_name: form.restaurantName.value,
+    owner_name: form.ownerName.value,
+    email: form.email.value,
+    phone: form.phone.value,
+    locations: form.locations.value
+  };
+
+  const { error } = await sb.from('ot_signups').insert([data]);
+
+  if (error) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Start My 7-Day Free Trial';
+    alert('Something went wrong submitting your info. Please try again or contact support.');
+    console.error(error);
+    return;
+  }
+
+  form.style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+});
 </script>
 
 </body>
