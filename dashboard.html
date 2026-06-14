@@ -62,6 +62,13 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:16px
 .type-pickup{background:rgba(96,165,250,.12);color:var(--blue)}
 .type-delivery{background:rgba(167,139,250,.12);color:#A78BFA}
 .type-reservation{background:rgba(74,222,128,.12);color:var(--green)}
+.schedule-mode-btn{flex:1;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.schedule-mode-btn.active{background:rgba(255,107,53,.15);border-color:var(--accent);color:var(--accent)}
+.hours-toggle{width:32px;height:18px;border-radius:9px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.hours-toggle.on{background:var(--accent)}
+.hours-toggle .knob{position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.hours-toggle.on .knob{left:14px}
+input[type=time]{background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px;width:100%}
 .order-items{margin-bottom:10px}
 .item-line{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .item-line:last-child{border-bottom:none}
@@ -160,6 +167,51 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:16px
     <div class="col-body"></div>
   </div>
 
+</div>
+
+<!-- AGENT SCHEDULE PANEL -->
+<div class="reservations" id="agentSchedulePanel" style="margin-bottom:0;padding-bottom:20px">
+  <div class="res-header" style="display:flex;align-items:center;justify-content:space-between">
+    <span>🤖 Agent Schedule</span>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
+      <span id="agentStatusLabel">Loading...</span>
+      <div id="agentToggle" onclick="toggleAgentNow()" style="width:42px;height:24px;border-radius:12px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+        <div id="agentToggleKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE SELECTOR -->
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button class="schedule-mode-btn active" id="mode-always" onclick="setScheduleMode('always')">Always On</button>
+    <button class="schedule-mode-btn" id="mode-busy" onclick="setScheduleMode('busy')">Busy Hours Only</button>
+    <button class="schedule-mode-btn" id="mode-custom" onclick="setScheduleMode('custom')">Custom Hours</button>
+  </div>
+
+  <!-- BUSY HOURS INFO -->
+  <div id="busy-info" style="display:none;background:var(--card2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+    Agent answers calls during <strong style="color:var(--text)">Lunch (11am–2pm)</strong> and <strong style="color:var(--text)">Dinner (5pm–9pm)</strong> only — when your phone rings most. Calls outside those windows go to a closed message, saving your included minutes for peak hours.
+  </div>
+
+  <!-- CUSTOM HOURS GRID -->
+  <div id="custom-hours" style="display:none">
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px 10px;align-items:center;font-size:12px;margin-bottom:12px" id="hours-grid">
+    </div>
+    <button onclick="saveCustomHours()" class="action-btn" style="font-size:12px;padding:8px 16px;margin-top:4px">Save Hours</button>
+  </div>
+
+  <!-- SPAM PROTECTION -->
+  <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:10px;padding:11px 14px;margin-top:8px">
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px">🛡️ Spam & Robocall Shield</div>
+      <div style="font-size:11px;color:var(--text2)">STIR/SHAKEN detection + quick disconnect on wrong numbers</div>
+    </div>
+    <div id="spamToggle" onclick="toggleSpam()" style="width:42px;height:24px;border-radius:12px;background:var(--accent);cursor:pointer;position:relative;flex-shrink:0">
+      <div id="spamKnob" style="position:absolute;top:2px;left:20px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:var(--text2);margin-top:10px;text-align:center" id="minutesUsed">Loading usage...</div>
 </div>
 
 <!-- RESERVATIONS -->
@@ -343,6 +395,152 @@ async function loadReservations() {
   }).join('');
 }
 
+// ── AGENT SCHEDULE ──────────────────────────────────────────────────────
+const DAYS = ['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_LABELS = {mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+
+const BUSY_HOURS = {
+  mon:{open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true},
+  tue:{open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true},
+  wed:{open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true},
+  thu:{open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true},
+  fri:{open:'11:00',close:'14:00',open2:'17:00',close2:'22:00',enabled:true},
+  sat:{open:'11:00',close:'14:00',open2:'17:00',close2:'22:00',enabled:true},
+  sun:{open:'12:00',close:'14:30',open2:'17:00',close2:'21:00',enabled:true}
+};
+
+const ALWAYS_HOURS = {
+  mon:{open:'09:00',close:'23:00',enabled:true},
+  tue:{open:'09:00',close:'23:00',enabled:true},
+  wed:{open:'09:00',close:'23:00',enabled:true},
+  thu:{open:'09:00',close:'23:00',enabled:true},
+  fri:{open:'09:00',close:'23:59',enabled:true},
+  sat:{open:'09:00',close:'23:59',enabled:true},
+  sun:{open:'10:00',close:'23:00',enabled:true}
+};
+
+let currentMode = 'always';
+let customHours = JSON.parse(JSON.stringify(ALWAYS_HOURS));
+let agentActive = true;
+let spamEnabled = true;
+
+function setScheduleMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.schedule-mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`mode-${mode}`).classList.add('active');
+  document.getElementById('busy-info').style.display = mode === 'busy' ? 'block' : 'none';
+  document.getElementById('custom-hours').style.display = mode === 'custom' ? 'block' : 'none';
+  if (mode === 'custom') buildHoursGrid();
+  saveScheduleToSupabase();
+}
+
+function buildHoursGrid() {
+  const grid = document.getElementById('hours-grid');
+  grid.innerHTML = DAYS.map(d => {
+    const h = customHours[d] || {open:'11:00',close:'22:00',enabled:true};
+    return `
+      <div style="color:var(--text2);font-weight:700;padding-right:4px">${DAY_LABELS[d]}</div>
+      <input type="time" id="open-${d}" value="${h.open}" onchange="updateCustomHour('${d}')">
+      <input type="time" id="close-${d}" value="${h.close}" onchange="updateCustomHour('${d}')">
+      <div class="hours-toggle ${h.enabled ? 'on' : ''}" id="tog-${d}" onclick="toggleDay('${d}')">
+        <div class="knob"></div>
+      </div>`;
+  }).join('');
+}
+
+function updateCustomHour(day) {
+  customHours[day].open = document.getElementById(`open-${day}`).value;
+  customHours[day].close = document.getElementById(`close-${day}`).value;
+}
+
+function toggleDay(day) {
+  customHours[day].enabled = !customHours[day].enabled;
+  const tog = document.getElementById(`tog-${day}`);
+  tog.classList.toggle('on', customHours[day].enabled);
+}
+
+async function saveCustomHours() {
+  await saveScheduleToSupabase();
+  showToast('Hours saved!');
+}
+
+async function saveScheduleToSupabase() {
+  if (!RESTAURANT_ID) return;
+  let hours;
+  if (currentMode === 'always') hours = ALWAYS_HOURS;
+  else if (currentMode === 'busy') hours = BUSY_HOURS;
+  else hours = customHours;
+  await sb.from('ot_restaurants').update({
+    open_hours: hours,
+    agent_active: agentActive,
+    spam_protection: spamEnabled
+  }).eq('id', RESTAURANT_ID);
+}
+
+async function toggleAgentNow() {
+  agentActive = !agentActive;
+  updateAgentToggleUI();
+  await saveScheduleToSupabase();
+  showToast(agentActive ? 'Agent is ON — answering calls' : 'Agent paused — calls going to voicemail');
+}
+
+function updateAgentToggleUI() {
+  const toggle = document.getElementById('agentToggle');
+  const knob = document.getElementById('agentToggleKnob');
+  const label = document.getElementById('agentStatusLabel');
+  toggle.style.background = agentActive ? 'var(--accent)' : 'var(--border)';
+  knob.style.left = agentActive ? '20px' : '2px';
+  label.textContent = agentActive ? 'Agent ON' : 'Agent PAUSED';
+  label.style.color = agentActive ? 'var(--accent)' : 'var(--text2)';
+}
+
+async function toggleSpam() {
+  spamEnabled = !spamEnabled;
+  const toggle = document.getElementById('spamToggle');
+  const knob = document.getElementById('spamKnob');
+  toggle.style.background = spamEnabled ? 'var(--accent)' : 'var(--border)';
+  knob.style.left = spamEnabled ? '20px' : '2px';
+  await saveScheduleToSupabase();
+  showToast(spamEnabled ? 'Spam shield ON' : 'Spam shield OFF');
+}
+
+async function loadScheduleSettings() {
+  if (!RESTAURANT_ID) return;
+  const { data } = await sb.from('ot_restaurants')
+    .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included')
+    .eq('id', RESTAURANT_ID).single();
+  if (!data) return;
+
+  agentActive = data.agent_active !== false;
+  spamEnabled = data.spam_protection !== false;
+  updateAgentToggleUI();
+
+  const spamKnob = document.getElementById('spamKnob');
+  const spamTog = document.getElementById('spamToggle');
+  spamTog.style.background = spamEnabled ? 'var(--accent)' : 'var(--border)';
+  spamKnob.style.left = spamEnabled ? '20px' : '2px';
+
+  const used = data.minutes_used || 0;
+  const included = data.minutes_included || 2000;
+  const pct = Math.min(100, Math.round((used/included)*100));
+  document.getElementById('minutesUsed').innerHTML =
+    `<span style="color:var(--text)">${used.toLocaleString()}</span> / ${included.toLocaleString()} minutes used this month (${pct}%)` +
+    (used > included ? ` · <span style="color:var(--accent)">+${(used-included).toLocaleString()} overage min × $0.20</span>` : '');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('dash-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'dash-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:12px 18px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 2500);
+}
+
 async function init() {
   const { data: rest, error } = await sb
     .from('ot_restaurants')
@@ -358,6 +556,7 @@ async function init() {
   await loadOrders();
   await loadStats();
   await loadReservations();
+  await loadScheduleSettings();
 
   // Realtime: refresh whenever orders change
   sb.channel('ot_orders_changes')
