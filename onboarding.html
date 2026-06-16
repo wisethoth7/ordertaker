@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Started — OrderTaker</title>
+<link rel="icon" href="icons/ot-icon-96.png?v=2">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0A0303;color:#FFF5F5;font-family:-apple-system,sans-serif;line-height:1.6;min-height:100vh}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 48px;display:flex;justify-content:space-between;align-items:center;background:rgba(10,3,3,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,107,53,0.15)}
+.wrap{max-width:720px;margin:0 auto;padding:100px 24px 80px}
+h1{font-size:38px;font-weight:900;letter-spacing:-1.5px;margin-bottom:10px}
+.step-card{background:#1A0707;border:1px solid rgba(255,107,53,0.15);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.step-card.done{border-color:rgba(74,222,128,0.2)}
+.step-card.active{border-color:#FF6B35}
+.step-header{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer}
+.step-num{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;border:2px solid rgba(255,255,255,0.1);color:#9A7575}
+.step-card.done .step-num{background:#4ADE80;border-color:#4ADE80;color:#000}
+.step-card.active .step-num{background:#FF6B35;border-color:#FF6B35;color:#1a0000}
+.step-body{display:none;padding:0 24px 24px}
+.step-card.active .step-body{display:block}
+.btn-action{padding:11px 22px;background:#FF6B35;color:#1a0000;font-size:14px;font-weight:800;border-radius:9px;text-decoration:none;display:inline-block;margin-right:8px}
+.btn-complete{padding:11px 22px;background:rgba(74,222,128,0.08);color:#4ADE80;font-size:14px;font-weight:700;border-radius:9px;border:1px solid rgba(74,222,128,0.2);cursor:pointer}
+.progress-bar{height:6px;background:#1A0707;border-radius:99px;overflow:hidden;margin-bottom:36px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#FF6B35,#FF9A6C);border-radius:99px;transition:width .5s ease}
+</style>
+</head>
+<body>
+<nav>
+<a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+<img src="icons/ot-icon-96.png" style="width:36px;height:36px;border-radius:8px">
+<span style="font-size:20px;font-weight:800"><span style="color:#FFF5F5">Order</span><span style="color:#FF6B35">Taker</span></span>
+</a>
+</nav>
+<div class="wrap">
+<span style="font-size:11px;font-weight:700;letter-spacing:2px;color:#FF6B35;text-transform:uppercase;display:block;margin-bottom:14px">Getting Started</span>
+<h1>4 steps to your first answered call.</h1>
+<p style="font-size:16px;color:#9A7575;margin-bottom:32px">Complete the checklist to activate your AI phone agent.</p>
+<div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:14px 20px;margin-bottom:28px">
+<span style="font-size:13px;color:#FFF5F5;font-weight:600">7-day money-back guarantee</span>
+<span style="font-size:12px;color:#9A7575;margin-left:8px">Not happy? Email us for a full refund.</span>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:12px;color:#9A7575;margin-bottom:8px"><span>Progress</span><span id="pct">0%</span></div>
+<div class="progress-bar"><div class="progress-fill" id="pbar" style="width:0%"></div></div>
+<div id="steps">
+<div class="step-card active" id="s1" data-step="1">
+<div class="step-header" onclick="toggle(1)">
+<div class="step-num" id="n1">1</div>
+<div style="flex:1"><div style="font-size:16px;font-weight:800">Upload your menu</div><div style="font-size:12px;color:#9A7575">So your agent knows what to offer callers</div></div>
+</div>
+<div class="step-body">
+<p style="font-size:14px;color:#9A7575;margin-bottom:18px">Add your menu items so the AI can take accurate orders and answer menu questions.</p>
+<a href="menu-upload.html" class="btn-action">Upload Menu</a>
+<button class="btn-complete" onclick="done(1)">Mark Complete</button>
+</div>
+</div>
+<div class="step-card" id="s2" data-step="2">
+<div class="step-header" onclick="toggle(2)">
+<div class="step-num" id="n2">2</div>
+<div style="flex:1"><div style="font-size:16px;font-weight:800">Set your hours</div><div style="font-size:12px;color:#9A7575">Agent pauses when closed</div></div>
+</div>
+<div class="step-body">
+<p style="font-size:14px;color:#9A7575;margin-bottom:18px">Set open and close times in your dashboard so the agent never takes orders when you are closed.</p>
+<a href="dashboard.html" class="btn-action">Open Dashboard</a>
+<button class="btn-complete" onclick="done(2)">Mark Complete</button>
+</div>
+</div>
+<div class="step-card" id="s3" data-step="3">
+<div class="step-header" onclick="toggle(3)">
+<div class="step-num" id="n3">3</div>
+<div style="flex:1"><div style="font-size:16px;font-weight:800">Connect your phone number</div><div style="font-size:12px;color:#9A7575">Via Vapi dashboard</div></div>
+</div>
+<div class="step-body">
+<p style="font-size:14px;color:#9A7575;margin-bottom:18px">Connect your Vapi phone number. Email our setup team if you need help.</p>
+<a href="mailto:thothwisdom7@gmail.com?subject=Phone Setup Help" class="btn-action">Email Setup Team</a>
+<button class="btn-complete" onclick="done(3)">Mark Complete</button>
+</div>
+</div>
+<div class="step-card" id="s4" data-step="4">
+<div class="step-header" onclick="toggle(4)">
+<div class="step-num" id="n4">4</div>
+<div style="flex:1"><div style="font-size:16px;font-weight:800">Make a test call</div><div style="font-size:12px;color:#9A7575">Confirm everything works</div></div>
+</div>
+<div class="step-body">
+<p style="font-size:14px;color:#9A7575;margin-bottom:18px">Call your agent number, place a test order, and confirm it appears in your dashboard.</p>
+<a href="dashboard.html" class="btn-action">Open Dashboard</a>
+<button class="btn-complete" onclick="done(4)">Mark Complete</button>
+</div>
+</div>
+</div>
+<div id="complete" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:16px;padding:32px;text-align:center;margin-top:28px">
+<div style="font-size:52px;margin-bottom:16px">🎉</div>
+<h2 style="font-size:24px;font-weight:900;color:#4ADE80;margin-bottom:8px">You are live!</h2>
+<p style="font-size:15px;color:#9A7575;margin-bottom:20px">Your AI agent is answering calls. Orders appear in your dashboard in real time.</p>
+<a href="dashboard.html" style="padding:12px 28px;background:#FF6B35;color:#1a0000;font-size:14px;font-weight:800;border-radius:9px;text-decoration:none;display:inline-block">Go to Dashboard</a>
+</div>
+</div>
+<footer style="text-align:center;padding:24px;border-top:1px solid rgba(255,107,53,0.15);font-size:13px;color:#9A7575;display:flex;justify-content:center;gap:24px">
+<a href="index.html" style="color:#9A7575;text-decoration:none">Home</a>
+<a href="terms.html" style="color:#9A7575;text-decoration:none">Terms</a>
+<a href="privacy.html" style="color:#9A7575;text-decoration:none">Privacy</a>
+</footer>
+<script>
+let c=new Set(JSON.parse(localStorage.getItem("ot_done")||"[]"));
+function save(){localStorage.setItem("ot_done",JSON.stringify([...c]))}
+function upd(){let p=Math.round(c.size/4*100);document.getElementById("pbar").style.width=p+"%";document.getElementById("pct").textContent=p+"%";if(c.size===4)document.getElementById("complete").style.display="block";}
+function done(n){c.add(n);save();let s=document.getElementById("s"+n);s.classList.remove("active");s.classList.add("done");document.getElementById("n"+n).textContent="✓";if(n<4&&!c.has(n+1))toggle(n+1);upd();}
+function toggle(n){document.querySelectorAll(".step-card").forEach(x=>{if(parseInt(x.dataset.step)!==n)x.classList.remove("active")});let s=document.getElementById("s"+n);if(!s.classList.contains("done"))s.classList.toggle("active");}
+c.forEach(n=>{let s=document.getElementById("s"+n);if(s){s.classList.remove("active");s.classList.add("done");document.getElementById("n"+n).textContent="✓";}});
+for(let i=1;i<=4;i++){if(!c.has(i)){toggle(i);break;}}
+upd();
+</script>
+</body>
+</html>
