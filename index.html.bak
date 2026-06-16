@@ -322,14 +322,14 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-eyebrow">THE ONLY AI PHONE AGENT THAT ACTUALLY TAKES ORDERS</div>
+  <div class="hero-eyebrow">AI PHONE AGENT FOR RESTAURANTS</div>
   <h1>Your Phone Rings.<br><span class="highlight">AI Answers.</span><br>Orders Flow.</h1>
-  <p class="hero-sub">OrderTaker answers every call, takes the full order, and sends a confirmation — without touching your POS or interrupting your staff. Flat $299/month. No per-minute billing. No surprises.</p>
+  <p class="hero-sub">OrderTaker picks up every call 24/7. Takes pickup and delivery orders, handles reservations, and sends instant SMS confirmations — without a single staff member touching the phone.</p>
   <div class="hero-actions">
     <a href="signup.html" class="btn-primary">Start Your 7-Day Free Trial</a>
     <a href="#how" class="btn-secondary">See how it works</a>
   </div>
-  <p class="hero-note"><span style="color:var(--green)">✓</span> Flat monthly rate &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> Actually takes full orders &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> No per-minute billing &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> Cancel anytime</p>
+  <p class="hero-note">7-day free trial · 2,000 minutes included · $0.20/min after · No contracts</p>
 </section>
 
 <!-- PHONE MOCKUP -->
@@ -570,32 +570,6 @@
   </p>
 </div>
 
-<div style="background:var(--surface);padding:64px 24px;border-top:1px solid var(--border)">
-  <div style="max-width:760px;margin:0 auto;text-align:center">
-    <div class="section-label">WHY ORDERTAKER</div>
-    <h2 style="margin-bottom:12px">Other tools answer.<br>We actually take the order.</h2>
-    <p style="font-size:15px;color:var(--text2);max-width:520px;margin:0 auto 40px;line-height:1.7">Most AI phone agents redirect callers to an app. OrderTaker completes the full order on the call.</p>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left">
-        <thead><tr style="border-bottom:2px solid var(--border)">
-          <th style="padding:12px 16px;color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase">Feature</th>
-          <th style="padding:12px 16px;text-align:center;color:var(--accent);font-weight:800">OrderTaker<br><span style="font-size:11px;font-weight:600;color:var(--text2)">$299/mo</span></th>
-          <th style="padding:12px 16px;text-align:center;color:var(--text2);font-weight:700">Slang.ai<br><span style="font-size:11px">$399-600/mo</span></th>
-          <th style="padding:12px 16px;text-align:center;color:var(--text2);font-weight:700">Loman AI<br><span style="font-size:11px">$199-299/mo</span></th>
-        </tr></thead>
-        <tbody>
-          <tr style="border-bottom:1px solid rgba(255,107,53,0.08)"><td style="padding:12px 16px;color:var(--text)">Takes full phone orders</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">✓</td><td style="padding:12px 16px;text-align:center;color:var(--red)">✗ redirects to app</td><td style="padding:12px 16px;text-align:center;color:var(--green)">✓</td></tr>
-          <tr style="border-bottom:1px solid rgba(255,107,53,0.08)"><td style="padding:12px 16px;color:var(--text)">Flat monthly pricing</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">✓</td><td style="padding:12px 16px;text-align:center;color:var(--amber)">per-minute</td><td style="padding:12px 16px;text-align:center;color:var(--amber)">per-minute</td></tr>
-          <tr style="border-bottom:1px solid rgba(255,107,53,0.08)"><td style="padding:12px 16px;color:var(--text)">Spanish and Arabic support</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">✓ included</td><td style="padding:12px 16px;text-align:center;color:var(--amber)">English only</td><td style="padding:12px 16px;text-align:center;color:var(--amber)">English only</td></tr>
-          <tr style="border-bottom:1px solid rgba(255,107,53,0.08)"><td style="padding:12px 16px;color:var(--text)">AI upselling on every call</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">✓ included</td><td style="padding:12px 16px;text-align:center;color:var(--red)">✗</td><td style="padding:12px 16px;text-align:center;color:var(--red)">✗</td></tr>
-          <tr style="border-bottom:1px solid rgba(255,107,53,0.08)"><td style="padding:12px 16px;color:var(--text)">SMS confirmation after order</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">✓ included</td><td style="padding:12px 16px;text-align:center;color:var(--amber)">add-on cost</td><td style="padding:12px 16px;text-align:center;color:var(--green)">✓</td></tr>
-          <tr><td style="padding:12px 16px;color:var(--text)">Money-back guarantee</td><td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:800">7 days</td><td style="padding:12px 16px;text-align:center;color:var(--red)">✗</td><td style="padding:12px 16px;text-align:center;color:var(--red)">✗</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:12px;color:var(--text2);margin-top:16px">Competitor pricing based on publicly available information as of June 2026.</p>
-  </div>
-</div>
 <!-- FAQ -->
 <div id="faq" class="faq-section">
   <div class="section-label">FAQ</div>
