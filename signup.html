@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Start Your Free Trial — OrderTaker</title>
+<title>Get Started — OrderTaker</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF6B35">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
 <link rel="icon" href="icons/ot-icon-96.png?v=2">
-<meta name="description" content="Start your 7-day free trial of OrderTaker — the AI phone agent that answers your restaurant's calls 24/7.">
+<meta name="description" content="Start using OrderTaker — 7-day money-back guarantee — the AI phone agent that answers your restaurant's calls 24/7.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root {
@@ -151,7 +151,7 @@
 
 <!-- SIGNUP -->
 <div class="signup-wrap">
-  <div class="signup-eyebrow">7-DAY FREE TRIAL</div>
+  <div class="signup-eyebrow">7-DAY MONEY-BACK GUARANTEE</div>
   <h1>Start answering<br>every call <span class="highlight">today.</span></h1>
   <p class="signup-sub">Tell us about your restaurant and we'll have your AI phone agent ready within 24 hours. No credit card required to start your trial.</p>
 
@@ -183,7 +183,7 @@
         <option value="4+">4 or more</option>
       </select>
     </div>
-    <button type="submit" class="btn-primary">Start My 7-Day Free Trial</button>
+    <button type="submit" class="btn-primary">Get Started — 7-Day Money-Back</button>
     <p class="signup-note">No credit card required · Cancel anytime · Setup in 24 hours</p>
 
     <div class="trial-perks">
@@ -233,7 +233,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
 
   if (error) {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Start My 7-Day Free Trial';
+    submitBtn.textContent = 'Get Started — 7-Day Money-Back';
     alert('Something went wrong submitting your info. Please try again or contact support.');
     console.error(error);
     return;
