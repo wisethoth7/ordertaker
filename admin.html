@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — OrderTaker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0F172A;color:#F1F5F9;min-height:100vh}
+.pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.pin-screen h1{font-size:26px;font-weight:900;margin-bottom:6px}
+.pin-screen p{font-size:14px;color:#94A3B8;margin-bottom:28px}
+.pin-screen input{width:260px;padding:14px;background:#1E293B;border:1.5px solid #334155;border-radius:12px;color:#F1F5F9;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:12px}
+.pin-screen button{width:260px;padding:14px;background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
+.pin-screen .err{color:#F87171;font-size:13px;margin-top:8px;display:none}
+#admin-panel{display:none}
+.topbar{background:#1E293B;border-bottom:1px solid #334155;padding:14px 24px;display:flex;align-items:center;gap:16px}
+.topbar h1{font-size:18px;font-weight:800;color:#F1F5F9}
+.topbar .badge{background:#7C3AED;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.topbar .logout{margin-left:auto;background:none;border:1px solid #475569;color:#94A3B8;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;padding:24px;max-width:1200px;margin:0 auto}
+.stat-card{background:#1E293B;border:1px solid #334155;border-radius:14px;padding:20px}
+.stat-card h3{font-size:12px;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card .value{font-size:32px;font-weight:900;color:#F1F5F9}
+.stat-card .sub{font-size:12px;color:#64748B;margin-top:4px}
+.section{max-width:1200px;margin:0 auto;padding:0 24px 24px}
+.section h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#CBD5E1}
+table{width:100%;border-collapse:collapse;background:#1E293B;border-radius:12px;overflow:hidden;border:1px solid #334155}
+th{padding:12px 16px;text-align:left;font-size:12px;color:#64748B;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #334155;background:#0F172A}
+td{padding:12px 16px;font-size:13px;color:#CBD5E1;border-bottom:1px solid #1E293B}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#263348}
+.badge-active{background:#064E3B;color:#34D399;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-trial{background:#1E3A5F;color:#60A5FA;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-paused{background:#3B1F1F;color:#F87171;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.empty-row{text-align:center;color:#475569;padding:32px!important}
+.refresh-btn{background:#1E293B;border:1px solid #475569;color:#94A3B8;padding:7px 16px;border-radius:8px;font-size:12px;cursor:pointer;margin-left:auto;display:block;margin-bottom:12px}
+.refresh-btn:hover{border-color:#7C3AED;color:#A78BFA}
+</style>
+</head>
+<body>
+
+<div class="pin-screen" id="pin-screen">
+  <h1>🔐 OrderTaker Admin</h1>
+  <p>Horus Pantheon — Internal Access Only</p>
+  <input type="password" id="pin-input" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')checkPin()">
+  <button onclick="checkPin()">Enter</button>
+  <div class="err" id="pin-err">Incorrect PIN</div>
+</div>
+
+<div id="admin-panel">
+  <div class="topbar">
+    <h1>OrderTaker Admin</h1>
+    <span class="badge">Horus Pantheon</span>
+    <button class="logout" onclick="logout()">Lock</button>
+  </div>
+
+  <div class="grid" id="stats-grid">
+    <div class="stat-card"><h3>Total Signups</h3><div class="value" id="s-signups">—</div><div class="sub">All time</div></div>
+    <div class="stat-card"><h3>Active Restaurants</h3><div class="value" id="s-active">—</div><div class="sub">Agent live</div></div>
+    <div class="stat-card"><h3>Trial Restaurants</h3><div class="value" id="s-trial">—</div><div class="sub">7-day trial</div></div>
+    <div class="stat-card"><h3>MRR</h3><div class="value" id="s-mrr">—</div><div class="sub">$299/mo × active</div></div>
+  </div>
+
+  <div class="section">
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <h2>Recent Signups</h2>
+    <table>
+      <thead><tr><th>Restaurant</th><th>Contact</th><th>Email</th><th>Signed Up</th><th>Status</th></tr></thead>
+      <tbody id="signups-tbody"><tr><td class="empty-row" colspan="5">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="section" style="margin-top:24px">
+    <h2>Restaurants</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Minutes Used</th><th>Agent</th></tr></thead>
+      <tbody id="restaurants-tbody"><tr><td class="empty-row" colspan="5">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const ADMIN_PIN = '2026ndd';
+const SUPABASE_URL = 'https://hvyfeebazmiqateniupm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eWZlZWJhem1pcWF0ZW5pdXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMTI2MTcsImV4cCI6MjA5NTY4ODYxN30.89qqEshOwp1bU2AQbzSpZ36_TuqP2jVULo_9Ug-S9_c';
+
+function checkPin(){
+  const val = document.getElementById('pin-input').value;
+  if(val === ADMIN_PIN){
+    sessionStorage.setItem('ot_admin','1');
+    showPanel();
+  } else {
+    document.getElementById('pin-err').style.display='block';
+    document.getElementById('pin-input').value='';
+  }
+}
+function logout(){ sessionStorage.removeItem('ot_admin'); location.reload(); }
+function showPanel(){
+  document.getElementById('pin-screen').style.display='none';
+  document.getElementById('admin-panel').style.display='block';
+  loadData();
+}
+if(sessionStorage.getItem('ot_admin')==='1') showPanel();
+
+async function sbFetch(path){
+  const r = await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  return r.json();
+}
+
+async function loadData(){
+  try {
+    const [signups, restaurants] = await Promise.all([
+      sbFetch('ot_signups?order=created_at.desc&limit=20'),
+      sbFetch('ot_restaurants?order=created_at.desc&limit=50')
+    ]);
+
+    // Stats
+    const active = (restaurants||[]).filter(r=>r.agent_active).length;
+    const trial = (restaurants||[]).filter(r=>r.trial_ends_at && new Date(r.trial_ends_at) > new Date()).length;
+    document.getElementById('s-signups').textContent = (signups||[]).length;
+    document.getElementById('s-active').textContent = active;
+    document.getElementById('s-trial').textContent = trial;
+    document.getElementById('s-mrr').textContent = '$'+(active*299).toLocaleString();
+
+    // Signups table
+    const stbody = document.getElementById('signups-tbody');
+    if(!signups||!signups.length){ stbody.innerHTML='<tr><td class="empty-row" colspan="5">No signups yet</td></tr>'; }
+    else {
+      stbody.innerHTML = signups.map(s=>`
+        <tr>
+          <td>${esc(s.restaurant_name||'—')}</td>
+          <td>${esc(s.contact_name||'—')}</td>
+          <td>${esc(s.email||'—')}</td>
+          <td>${s.created_at?new Date(s.created_at).toLocaleDateString():'—'}</td>
+          <td><span class="${s.provisioned?'badge-active':'badge-trial'}">${s.provisioned?'Provisioned':'Pending'}</span></td>
+        </tr>`).join('');
+    }
+
+    // Restaurants table
+    const rtbody = document.getElementById('restaurants-tbody');
+    if(!restaurants||!restaurants.length){ rtbody.innerHTML='<tr><td class="empty-row" colspan="5">No restaurants yet</td></tr>'; }
+    else {
+      rtbody.innerHTML = restaurants.map(r=>`
+        <tr>
+          <td>${esc(r.name||'—')}</td>
+          <td>${esc(r.telnyx_phone||'—')}</td>
+          <td>$${r.plan_price||299}/mo</td>
+          <td>${r.minutes_used||0} / ${r.minutes_included||2000}</td>
+          <td><span class="${r.agent_active?'badge-active':'badge-paused'}">${r.agent_active?'Active':'Paused'}</span></td>
+        </tr>`).join('');
+    }
+  } catch(e){ console.error('Load error', e); }
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
