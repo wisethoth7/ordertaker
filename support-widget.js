@@ -53,12 +53,12 @@
   document.head.appendChild(styleEl);
 
   const RESPONSES = {
-    'pricing': "OrderTaker is <strong>$299/month per restaurant</strong> — unlimited simultaneous calls, orders, reservations, after-hours pre-orders, owner/staff alerts, and the kitchen dashboard included. Have multiple locations? Each additional one is 15% off ($254.15/month).",
-    'signup': "Great! Tap the \"Get OrderTaker — $299/month\" button on this page and our team will reach out to get your restaurant set up within 24 hours.",
+    'pricing': "OrderTaker starts at <strong>$199/month</strong> (Starter) up to <strong>$799/month</strong> (Enterprise). <strong>Pro at $299/month</strong> is our most popular — 2,000 minutes, all order types, and staff alerts. <strong>Business at $499/month</strong> adds Square POS. <strong>Enterprise at $799/month</strong> adds Toast/Clover, 10,000 minutes, and a dedicated strategy call. Multiple locations get 15% off each additional site.",
+    'signup': "Head to our signup page and choose your plan — Starter ($199), Pro ($299), Business ($499), or Enterprise ($799). Our team will have your AI phone agent ready within 24 hours. No credit card required.",
     'setup': "Setup takes about 24 hours: sign up online, we train the AI on your menu and policies, then you forward your existing phone number to us. No new hardware needed.",
-    'pos': "OrderTaker works with <strong>any restaurant out of the box</strong> — no POS integration required. Orders show up on your tablet dashboard instantly. Direct Toast & Square integration is coming soon at no extra charge.",
+    'pos': "OrderTaker works with <strong>any restaurant out of the box</strong> — no POS integration required. Orders show up on your tablet dashboard instantly. <strong>Business plan</strong> ($499/mo) includes Square POS sync. <strong>Enterprise plan</strong> ($799/mo) includes Toast and Clover integration.",
     'languages': "OrderTaker currently answers in <strong>English, Spanish, and Arabic</strong>, automatically detecting the caller's language. More languages available on request.",
-    'human': "No problem — leave a quick reply here describing what you need, or use the \"Get OrderTaker\" button on this page and a real person from our team will follow up with you directly.",
+    'human': "No problem — leave a quick reply here describing what you need, or email us at <a href=\"mailto:thothwisdom7@gmail.com\">thothwisdom7@gmail.com</a> and a real person from our team will follow up directly.",
     'default': "Thanks for your message! Our team typically responds within one business day. In the meantime, here are some common topics:"
   };
 

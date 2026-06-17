@@ -156,7 +156,7 @@
   <p class="signup-sub">Tell us about your restaurant and we'll have your AI phone agent ready within 24 hours. No credit card required to start your trial.</p>
 
   <!-- PLAN SELECTOR -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px" id="planSelector">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px" id="planSelector">
     <div class="plan-opt" data-plan="starter" data-price="199" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">STARTER</div>
       <div style="font-size:22px;font-weight:800;color:var(--text)">$199</div>
@@ -174,7 +174,13 @@
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">BUSINESS</div>
       <div style="font-size:22px;font-weight:800;color:var(--text)">$499</div>
       <div style="font-size:11px;color:var(--text2)">/month</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:4px">5,000 min + POS</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">5,000 min · Square POS</div>
+    </div>
+    <div class="plan-opt" data-plan="enterprise" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">ENTERPRISE</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">$799</div>
+      <div style="font-size:11px;color:var(--text2)">/month</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">10,000 min · 2hr SLA</div>
     </div>
   </div>
 
@@ -237,7 +243,7 @@ const SUPABASE_URL = 'https://hvyfeebazmiqateniupm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eWZlZWJhem1pcWF0ZW5pdXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMTI2MTcsImV4cCI6MjA5NTY4ODYxN30.89qqEshOwp1bU2AQbzSpZ36_TuqP2jVULo_9Ug-S9_c';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month' };
+const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month', enterprise: 'Contact Us' };
 
 function selectPlan(el) {
   document.querySelectorAll('.plan-opt').forEach(p => {
@@ -248,13 +254,22 @@ function selectPlan(el) {
   el.style.background = 'rgba(255,107,53,0.06)';
   const plan = el.dataset.plan;
   document.getElementById('selectedPlan').value = plan;
-  document.getElementById('submitBtn').textContent = `Get Started — ${PLAN_LABELS[plan]} — 7-Day Money-Back`;
+  const btn = document.getElementById('submitBtn');
+  if (plan === 'enterprise') {
+    btn.textContent = 'Contact Us for Enterprise →';
+    btn.type = 'button';
+    btn.onclick = function() { window.location.href = 'mailto:thothwisdom7@gmail.com?subject=OrderTaker Enterprise Plan'; };
+  } else {
+    btn.textContent = 'Get Started — ' + PLAN_LABELS[plan] + ' — 7-Day Money-Back';
+    btn.type = 'submit';
+    btn.onclick = null;
+  }
 }
 
 // Pre-select plan from URL param
 (function() {
   const urlPlan = new URLSearchParams(window.location.search).get('plan');
-  if (urlPlan && ['starter','pro','business'].includes(urlPlan)) {
+  if (urlPlan && ['starter','pro','business','enterprise'].includes(urlPlan)) {
     const el = document.querySelector(`.plan-opt[data-plan="${urlPlan}"]`);
     if (el) selectPlan(el);
   }
@@ -263,6 +278,11 @@ function selectPlan(el) {
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const form = e.target;
+  const plan = form.selectedPlan.value || 'pro';
+  if (plan === 'enterprise') {
+    window.location.href = 'mailto:thothwisdom7@gmail.com?subject=OrderTaker Enterprise Plan';
+    return;
+  }
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
   submitBtn.disabled = true;
@@ -274,7 +294,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     email: form.email.value,
     phone: form.phone.value,
     locations: form.locations.value,
-    plan: form.selectedPlan.value || 'pro',
+    plan: plan,
   };
 
   const { error } = await sb.from('ot_signups').insert([data]);

@@ -110,6 +110,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   .stats{flex-wrap:wrap}
   .stat{min-width:45%;margin-right:8px;margin-bottom:8px}
 }
+.dash-tab{padding:12px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.dash-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.dash-tab:hover:not(.active){color:var(--text)}
+.billing-plan-card{transition:border-color .2s}
 </style>
 </head>
 <body>
@@ -122,6 +126,14 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <button onclick="showOnboarding()" style="background:rgba(255,107,53,.12);border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.5px">SETUP GUIDE</button>
   </div>
 </header>
+
+<div id="dash-tabs" style="background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0">
+  <button class="dash-tab active" onclick="switchTab('orders')" id="tab-btn-orders">📦 Orders</button>
+  <button class="dash-tab" onclick="switchTab('billing')" id="tab-btn-billing">💳 Plan &amp; Billing</button>
+  <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
+</div>
+
+<div id="panel-orders">
 
 <div class="stats">
   <div class="stat">
@@ -250,6 +262,115 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <button onclick="saveAlertEmail()" style="background:var(--card2);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Save Email</button>
   </div>
 </div>
+
+</div><!-- end panel-orders -->
+
+<!-- PLAN & BILLING PANEL -->
+<div id="panel-billing" style="display:none;padding:24px;max-width:1000px;margin:0 auto">
+
+  <!-- Current Plan -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:4px">YOUR CURRENT PLAN</div>
+        <div style="font-size:26px;font-weight:900;color:var(--accent)" id="billing-plan-name">Pro</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:32px;font-weight:900" id="billing-plan-price">$299</div>
+        <div style="font-size:12px;color:var(--text2)">/month</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+      <span>Minutes used this billing period</span>
+      <span id="billing-min-label">0 / 2,000</span>
+    </div>
+    <div style="background:var(--card2);border-radius:8px;height:10px;overflow:hidden;margin-bottom:8px">
+      <div id="billing-min-bar" style="height:100%;border-radius:8px;background:var(--accent);width:0%;transition:width .6s"></div>
+    </div>
+    <div id="billing-overage-note" style="font-size:12px;color:var(--text2)"></div>
+  </div>
+
+  <!-- Plan Cards -->
+  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">AVAILABLE PLANS</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
+    <div class="billing-plan-card" data-plan="starter" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">STARTER</div>
+      <div style="font-size:24px;font-weight:900">$199<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">1,000 min · $0.20/min overage<br>Pickup only · 2 staff numbers</div>
+      <a href="signup.html?plan=starter" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--border);color:var(--text2)">Get Starter</a>
+    </div>
+    <div class="billing-plan-card" data-plan="pro" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:8px">PRO — MOST POPULAR</div>
+      <div style="font-size:24px;font-weight:900">$299<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">2,000 min · $0.20/min overage<br>All order types · 5 staff numbers</div>
+      <a href="https://buy.stripe.com/bJefZaa209bLa4V9cv18c00" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--accent);color:#1a0a00">Upgrade to Pro</a>
+    </div>
+    <div class="billing-plan-card" data-plan="business" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">BUSINESS</div>
+      <div style="font-size:24px;font-weight:900">$499<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">5,000 min · $0.15/min overage<br>Square POS · 10 staff numbers</div>
+      <a href="mailto:thothwisdom7@gmail.com?subject=Upgrade to Business Plan" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Upgrade to Business</a>
+    </div>
+    <div class="billing-plan-card" data-plan="enterprise" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">ENTERPRISE</div>
+      <div style="font-size:24px;font-weight:900">$799<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">10,000 min · $0.15/min overage<br>Toast/Clover · Unlimited staff · 2hr SLA</div>
+      <a href="mailto:thothwisdom7@gmail.com?subject=OrderTaker Enterprise Plan" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Contact for Enterprise</a>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:12px;color:var(--text2);margin-bottom:28px">
+    To downgrade, email <a href="mailto:thothwisdom7@gmail.com?subject=Plan Downgrade Request" style="color:var(--accent)">thothwisdom7@gmail.com</a> — we'll process it before your next billing date.
+  </div>
+
+  <!-- Multi-Location Pricing Table -->
+  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">MULTI-LOCATION PRICING</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:10px 16px;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)">
+      <div>Plan</div><div>1st Location</div><div>Each Additional (15% off)</div><div>Monthly Savings</div>
+    </div>
+    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700;color:var(--text2)">Starter</div><div>$199/mo</div><div style="color:var(--green)">$169.15/mo</div><div style="color:var(--green)">$29.85/mo</div>
+    </div>
+    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);background:rgba(255,107,53,0.04)">
+      <div style="font-weight:700;color:var(--accent)">Pro ⭐</div><div>$299/mo</div><div style="color:var(--green)">$254.15/mo</div><div style="color:var(--green)">$44.85/mo</div>
+    </div>
+    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700;color:var(--text2)">Business</div><div>$499/mo</div><div style="color:var(--green)">$424.15/mo</div><div style="color:var(--green)">$74.85/mo</div>
+    </div>
+    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px">
+      <div style="font-weight:700;color:var(--text2)">Enterprise</div><div>$799/mo</div><div style="color:var(--green)">$679.15/mo</div><div style="color:var(--green)">$119.85/mo</div>
+    </div>
+  </div>
+
+</div><!-- end panel-billing -->
+
+<!-- CALL LOGS PANEL -->
+<div id="panel-calls" style="display:none;padding:24px;max-width:1000px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">Recent Call Logs</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">All inbound calls handled by your AI agent</div>
+    </div>
+    <button onclick="loadCallLogs()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">↻ Refresh</button>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">TIME</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">CALLER</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">OUTCOME</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">NOTES</th>
+        </tr>
+      </thead>
+      <tbody id="call-log-body">
+        <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text2)">Loading call logs…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="call-log-summary" style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap"></div>
+</div><!-- end panel-calls -->
 
 <!-- ONBOARDING WALKTHROUGH MODAL -->
 <div id="onboardingOverlay">
@@ -555,9 +676,10 @@ async function toggleSpam() {
 async function loadScheduleSettings() {
   if (!RESTAURANT_ID) return;
   const { data } = await sb.from('ot_restaurants')
-    .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included')
+    .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included,plan')
     .eq('id', RESTAURANT_ID).single();
   if (!data) return;
+  if (data.plan) currentPlanKey = data.plan;
 
   agentActive = data.agent_active !== false;
   spamEnabled = data.spam_protection !== false;
@@ -625,6 +747,11 @@ async function addStaffPhone() {
   if (raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
   const formatted = (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
   if (staffPhones.includes(formatted)) { showToast('Number already added'); return; }
+  const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.pro;
+  if (cfg.staff_limit !== null && staffPhones.length >= cfg.staff_limit) {
+    showToast(`${cfg.name} plan allows up to ${cfg.staff_limit} staff numbers. Upgrade your plan to add more.`);
+    return;
+  }
   staffPhones.push(formatted);
   await sb.from('ot_restaurants').update({ staff_phones: staffPhones }).eq('id', RESTAURANT_ID);
   input.value = '';
@@ -645,6 +772,111 @@ async function saveAlertEmail() {
   if (!email || !email.includes('@')) { showToast('Enter a valid email address'); return; }
   await sb.from('ot_restaurants').update({ alert_email: email }).eq('id', RESTAURANT_ID);
   showToast('Alert email saved!');
+}
+
+// ── PLAN & BILLING ───────────────────────────────────────────────────────
+const PLAN_CONFIG = {
+  starter:    { name: 'Starter',    price: 199, minutes: 1000,  overage: 0.20, staff_limit: 2 },
+  pro:        { name: 'Pro',        price: 299, minutes: 2000,  overage: 0.20, staff_limit: 5 },
+  business:   { name: 'Business',   price: 499, minutes: 5000,  overage: 0.15, staff_limit: 10 },
+  enterprise: { name: 'Enterprise', price: 799, minutes: 10000, overage: 0.15, staff_limit: null },
+};
+const PLAN_ORDER = ['starter', 'pro', 'business', 'enterprise'];
+let currentPlanKey = 'pro';
+
+function switchTab(tab) {
+  document.getElementById('panel-orders').style.display = tab === 'orders' ? '' : 'none';
+  document.getElementById('panel-billing').style.display = tab === 'billing' ? 'block' : 'none';
+  document.getElementById('panel-calls').style.display = tab === 'calls' ? 'block' : 'none';
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.id === 'tab-btn-' + tab));
+  if (tab === 'billing') loadBillingData();
+  if (tab === 'calls') loadCallLogs();
+}
+
+async function loadCallLogs() {
+  if (!RESTAURANT_ID) return;
+  const tbody = document.getElementById('call-log-body');
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text2)">Loading…</td></tr>';
+  const { data, error } = await sb.from('ot_call_log')
+    .select('created_at, customer_phone, customer_name, call_outcome, notes')
+    .eq('restaurant_id', RESTAURANT_ID)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error || !data?.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text2)">No call logs yet — logs appear here after your first call.</td></tr>';
+    return;
+  }
+  const OUTCOME_COLORS = { order: 'var(--green)', reservation: '#60A5FA', callback_requested: 'var(--accent)', voicemail: 'var(--text2)', error: 'var(--red)' };
+  tbody.innerHTML = data.map(log => {
+    const dt = new Date(log.created_at);
+    const timeStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const color = OUTCOME_COLORS[log.call_outcome] || 'var(--text2)';
+    const outcome = (log.call_outcome || '—').replace(/_/g, ' ');
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:12px 16px;color:var(--text2);white-space:nowrap">${timeStr}</td>
+      <td style="padding:12px 16px">
+        <div style="font-weight:700">${log.customer_name || '—'}</div>
+        <div style="font-size:11px;color:var(--text2)">${log.customer_phone || ''}</div>
+      </td>
+      <td style="padding:12px 16px"><span style="color:${color};font-weight:700;text-transform:capitalize">${outcome}</span></td>
+      <td style="padding:12px 16px;color:var(--text2);font-size:12px">${log.notes || '—'}</td>
+    </tr>`;
+  }).join('');
+  const summary = document.getElementById('call-log-summary');
+  const outcomes = data.reduce((acc, l) => { acc[l.call_outcome] = (acc[l.call_outcome]||0)+1; return acc; }, {});
+  summary.innerHTML = Object.entries(outcomes).map(([k,v]) =>
+    `<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px">
+      <span style="color:var(--text2)">${k.replace(/_/g,' ')}</span>
+      <span style="font-weight:800;color:var(--text);margin-left:8px">${v}</span>
+    </div>`).join('');
+}
+
+async function loadBillingData() {
+  if (!RESTAURANT_ID) return;
+  const { data } = await sb.from('ot_restaurants')
+    .select('plan, plan_price, minutes_included, minutes_used, overage_rate')
+    .eq('id', RESTAURANT_ID).single();
+  if (!data) return;
+  currentPlanKey = data.plan || 'pro';
+  const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.pro;
+  const used = data.minutes_used || 0;
+  const included = data.minutes_included || cfg.minutes;
+  const pct = Math.min(100, Math.round((used / included) * 100));
+  document.getElementById('billing-plan-name').textContent = cfg.name;
+  document.getElementById('billing-plan-price').textContent = '$' + (data.plan_price || cfg.price);
+  document.getElementById('billing-min-label').textContent = used.toLocaleString() + ' / ' + included.toLocaleString() + ' min';
+  document.getElementById('billing-min-bar').style.width = pct + '%';
+  document.getElementById('billing-min-bar').style.background =
+    pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--yellow)' : 'var(--accent)';
+  const note = document.getElementById('billing-overage-note');
+  if (used > included) {
+    const overage = used - included;
+    const rate = Number(data.overage_rate) || cfg.overage;
+    note.innerHTML = `<span style="color:var(--red)">⚠️ ${overage.toLocaleString()} overage min × $${rate.toFixed(2)} = $${(overage * rate).toFixed(2)} will be added to next invoice</span>`;
+  } else {
+    note.textContent = pct + '% of included minutes used this billing period.';
+  }
+  updatePlanCards(currentPlanKey);
+}
+
+function updatePlanCards(activePlan) {
+  const activePlanIdx = PLAN_ORDER.indexOf(activePlan);
+  document.querySelectorAll('.billing-plan-card').forEach(card => {
+    const plan = card.dataset.plan;
+    const idx = PLAN_ORDER.indexOf(plan);
+    const btn = card.querySelector('.billing-plan-btn');
+    if (!btn) return;
+    if (plan === activePlan) {
+      card.style.borderColor = 'var(--accent)';
+      btn.textContent = '✓ Current Plan';
+      btn.style.cssText = 'display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:rgba(255,107,53,0.12);border:1px solid var(--accent);color:var(--accent);cursor:default';
+      btn.removeAttribute('href');
+    } else if (idx < activePlanIdx) {
+      btn.textContent = 'Downgrade — Email Us';
+      btn.href = 'mailto:thothwisdom7@gmail.com?subject=Plan Downgrade Request';
+      btn.style.cssText = 'display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--border);color:var(--text2)';
+    }
+  });
 }
 
 // ── ONBOARDING WALKTHROUGH ───────────────────────────────────────────────
