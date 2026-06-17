@@ -53,8 +53,8 @@
   document.head.appendChild(styleEl);
 
   const RESPONSES = {
-    'pricing': "OrderTaker is <strong>$199/month per restaurant</strong> — unlimited simultaneous calls, orders, reservations, after-hours pre-orders, owner/staff alerts, and the kitchen dashboard included. Have multiple locations? Each additional one is 15% off ($169.15/month).",
-    'signup': "Great! Tap the \"Get OrderTaker — $199/month\" button on this page and our team will reach out to get your restaurant set up within 24 hours.",
+    'pricing': "OrderTaker is <strong>$299/month per restaurant</strong> — unlimited simultaneous calls, orders, reservations, after-hours pre-orders, owner/staff alerts, and the kitchen dashboard included. Have multiple locations? Each additional one is 15% off ($254.15/month).",
+    'signup': "Great! Tap the \"Get OrderTaker — $299/month\" button on this page and our team will reach out to get your restaurant set up within 24 hours.",
     'setup': "Setup takes about 24 hours: sign up online, we train the AI on your menu and policies, then you forward your existing phone number to us. No new hardware needed.",
     'pos': "OrderTaker works with <strong>any restaurant out of the box</strong> — no POS integration required. Orders show up on your tablet dashboard instantly. Direct Toast & Square integration is coming soon at no extra charge.",
     'languages': "OrderTaker currently answers in <strong>English, Spanish, and Arabic</strong>, automatically detecting the caller's language. More languages available on request.",
