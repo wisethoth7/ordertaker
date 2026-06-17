@@ -155,7 +155,31 @@
   <h1>Start answering<br>every call <span class="highlight">today.</span></h1>
   <p class="signup-sub">Tell us about your restaurant and we'll have your AI phone agent ready within 24 hours. No credit card required to start your trial.</p>
 
+  <!-- PLAN SELECTOR -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px" id="planSelector">
+    <div class="plan-opt" data-plan="starter" data-price="199" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">STARTER</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">$199</div>
+      <div style="font-size:11px;color:var(--text2)">/month</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">1,000 min</div>
+    </div>
+    <div class="plan-opt plan-selected" data-plan="pro" data-price="299" onclick="selectPlan(this)" style="border:2px solid var(--accent);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(255,107,53,0.06)">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:2px">MOST POPULAR</div>
+      <div style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:4px">PRO</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">$299</div>
+      <div style="font-size:11px;color:var(--text2)">/month</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">2,000 min</div>
+    </div>
+    <div class="plan-opt" data-plan="business" data-price="499" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">BUSINESS</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">$499</div>
+      <div style="font-size:11px;color:var(--text2)">/month</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">5,000 min + POS</div>
+    </div>
+  </div>
+
   <form class="form-card" id="signupForm">
+    <input type="hidden" id="selectedPlan" name="selectedPlan" value="pro">
     <div class="form-group">
       <label for="restaurantName">Restaurant Name</label>
       <input type="text" id="restaurantName" name="restaurantName" placeholder="e.g. Mario Kitchen" required>
@@ -183,11 +207,10 @@
         <option value="4+">4 or more</option>
       </select>
     </div>
-    <button type="submit" class="btn-primary">Get Started — 7-Day Money-Back</button>
+    <button type="submit" class="btn-primary" id="submitBtn">Get Started — $299/month — 7-Day Money-Back</button>
     <p class="signup-note">No credit card required · Cancel anytime · Setup in 24 hours</p>
 
     <div class="trial-perks">
-      <div><span class="check">✓</span> 2,000 minutes included per month/month</div>
       <div><span class="check">✓</span> Agent auto-pauses outside your hours — no wasted minutes</div>
       <div><span class="check">✓</span> Upload your menu — the AI learns it automatically</div>
       <div><span class="check">✓</span> Unlimited simultaneous calls, no busy signals</div>
@@ -214,10 +237,34 @@ const SUPABASE_URL = 'https://hvyfeebazmiqateniupm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eWZlZWJhem1pcWF0ZW5pdXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMTI2MTcsImV4cCI6MjA5NTY4ODYxN30.89qqEshOwp1bU2AQbzSpZ36_TuqP2jVULo_9Ug-S9_c';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month' };
+
+function selectPlan(el) {
+  document.querySelectorAll('.plan-opt').forEach(p => {
+    p.style.border = '2px solid var(--border)';
+    p.style.background = 'transparent';
+  });
+  el.style.border = '2px solid var(--accent)';
+  el.style.background = 'rgba(255,107,53,0.06)';
+  const plan = el.dataset.plan;
+  document.getElementById('selectedPlan').value = plan;
+  document.getElementById('submitBtn').textContent = `Get Started — ${PLAN_LABELS[plan]} — 7-Day Money-Back`;
+}
+
+// Pre-select plan from URL param
+(function() {
+  const urlPlan = new URLSearchParams(window.location.search).get('plan');
+  if (urlPlan && ['starter','pro','business'].includes(urlPlan)) {
+    const el = document.querySelector(`.plan-opt[data-plan="${urlPlan}"]`);
+    if (el) selectPlan(el);
+  }
+})();
+
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const form = e.target;
   const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
@@ -226,14 +273,15 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     owner_name: form.ownerName.value,
     email: form.email.value,
     phone: form.phone.value,
-    locations: form.locations.value
+    locations: form.locations.value,
+    plan: form.selectedPlan.value || 'pro',
   };
 
   const { error } = await sb.from('ot_signups').insert([data]);
 
   if (error) {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Get Started — 7-Day Money-Back';
+    submitBtn.textContent = originalText;
     alert('Something went wrong submitting your info. Please try again or contact support.');
     console.error(error);
     return;

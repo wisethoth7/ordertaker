@@ -97,6 +97,13 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 .res-meta{font-size:12px;color:var(--text2);margin-top:2px}
 .res-party{background:var(--card2);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;flex-shrink:0}
 
+/* STAFF NUMBERS */
+.staff-phone-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border)}
+.staff-phone-row:last-child{border-bottom:none}
+
+/* ONBOARDING OVERLAY */
+#onboardingOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;align-items:center;justify-content:center}
+
 @media(max-width:900px){
   .board{flex-direction:column}
   .column{margin-right:0;margin-bottom:8px;min-width:auto}
@@ -112,6 +119,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <div class="status-row">
     <span class="restaurant-name">Mario Kitchen · Jersey City, NJ</span>
     <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+    <button onclick="showOnboarding()" style="background:rgba(255,107,53,.12);border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.5px">SETUP GUIDE</button>
   </div>
 </header>
 
@@ -219,6 +227,46 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <div class="res-header">📅 Today's Reservations</div>
   <div class="res-list" id="res-list">
     <div class="res-row"><div class="res-info"><div class="res-meta">Loading reservations…</div></div></div>
+  </div>
+</div>
+
+<!-- STAFF ALERT NUMBERS -->
+<div class="reservations" id="staffNumbersPanel">
+  <div class="res-header" style="display:flex;align-items:center;justify-content:space-between">
+    <span>📱 Staff Alert Numbers</span>
+    <button onclick="document.getElementById('addPhoneRow').style.display='flex'" style="background:var(--accent);color:#1a0a00;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer">+ Add Number</button>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:10px">SMS + email alerts on every order, reservation, and callback request.</div>
+  <div id="staffPhonesList" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px">
+    <div style="padding:14px 18px;color:var(--text2);font-size:13px">Loading...</div>
+  </div>
+  <div id="addPhoneRow" style="display:none;gap:8px;margin-bottom:10px;align-items:center">
+    <input type="tel" id="newPhoneInput" placeholder="(732) 555-1234" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+    <button onclick="addStaffPhone()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
+    <button onclick="document.getElementById('addPhoneRow').style.display='none'" style="background:var(--card2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer">✕</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="email" id="alertEmailInput" placeholder="Alert email (e.g. you@restaurant.com)" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+    <button onclick="saveAlertEmail()" style="background:var(--card2);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Save Email</button>
+  </div>
+</div>
+
+<!-- ONBOARDING WALKTHROUGH MODAL -->
+<div id="onboardingOverlay">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;max-width:480px;width:calc(100vw - 40px);padding:32px;position:relative">
+    <button onclick="closeOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    <div style="display:flex;gap:6px;margin-bottom:24px">
+      <div id="ob-dot-1" style="flex:1;height:3px;border-radius:2px;background:var(--accent)"></div>
+      <div id="ob-dot-2" style="flex:1;height:3px;border-radius:2px;background:var(--border)"></div>
+      <div id="ob-dot-3" style="flex:1;height:3px;border-radius:2px;background:var(--border)"></div>
+      <div id="ob-dot-4" style="flex:1;height:3px;border-radius:2px;background:var(--border)"></div>
+      <div id="ob-dot-5" style="flex:1;height:3px;border-radius:2px;background:var(--border)"></div>
+    </div>
+    <div id="ob-step-content"></div>
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button id="ob-back-btn" onclick="obPrev()" style="display:none;flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-weight:700;cursor:pointer">← Back</button>
+      <button id="ob-next-btn" onclick="obNext()" style="flex:1;padding:12px;background:var(--accent);border:none;border-radius:10px;color:#1a0a00;font-size:14px;font-weight:800;cursor:pointer">Next →</button>
+    </div>
   </div>
 </div>
 
@@ -541,6 +589,131 @@ function showToast(msg) {
   setTimeout(() => t.style.opacity = '0', 2500);
 }
 
+// ── STAFF ALERT NUMBERS ─────────────────────────────────────────────────
+let staffPhones = [];
+
+async function loadStaffNumbers() {
+  if (!RESTAURANT_ID) return;
+  const { data } = await sb.from('ot_restaurants')
+    .select('staff_phones, alert_email')
+    .eq('id', RESTAURANT_ID).single();
+  if (!data) return;
+  staffPhones = data.staff_phones || [];
+  renderStaffPhones();
+  if (data.alert_email) document.getElementById('alertEmailInput').value = data.alert_email;
+}
+
+function renderStaffPhones() {
+  const list = document.getElementById('staffPhonesList');
+  if (!staffPhones.length) {
+    list.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No numbers yet — add yours to get SMS alerts for every order.</div>';
+    return;
+  }
+  list.innerHTML = staffPhones.map((p, i) => `
+    <div class="staff-phone-row">
+      <div>
+        <div style="font-size:14px;font-weight:700">${p}</div>
+        <div style="font-size:11px;color:var(--text2)">SMS alerts: new orders, reservations, callbacks</div>
+      </div>
+      <button onclick="removeStaffPhone(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
+    </div>`).join('');
+}
+
+async function addStaffPhone() {
+  const input = document.getElementById('newPhoneInput');
+  const raw = input.value.replace(/\D/g, '');
+  if (raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
+  const formatted = (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
+  if (staffPhones.includes(formatted)) { showToast('Number already added'); return; }
+  staffPhones.push(formatted);
+  await sb.from('ot_restaurants').update({ staff_phones: staffPhones }).eq('id', RESTAURANT_ID);
+  input.value = '';
+  document.getElementById('addPhoneRow').style.display = 'none';
+  renderStaffPhones();
+  showToast('Staff number added!');
+}
+
+async function removeStaffPhone(index) {
+  staffPhones.splice(index, 1);
+  await sb.from('ot_restaurants').update({ staff_phones: staffPhones }).eq('id', RESTAURANT_ID);
+  renderStaffPhones();
+  showToast('Number removed');
+}
+
+async function saveAlertEmail() {
+  const email = document.getElementById('alertEmailInput').value.trim();
+  if (!email || !email.includes('@')) { showToast('Enter a valid email address'); return; }
+  await sb.from('ot_restaurants').update({ alert_email: email }).eq('id', RESTAURANT_ID);
+  showToast('Alert email saved!');
+}
+
+// ── ONBOARDING WALKTHROUGH ───────────────────────────────────────────────
+const OB_STEPS = [
+  {
+    icon: '📋',
+    title: 'Upload Your Menu',
+    body: 'Go to Menu Upload and add your items — prices, descriptions, and allergens. The AI learns your full menu instantly.',
+    action: `<a href="menu-upload.html" style="display:block;text-align:center;padding:11px;background:var(--accent);color:#1a0a00;border-radius:9px;font-weight:800;text-decoration:none;margin-top:12px">Open Menu Upload →</a>`,
+  },
+  {
+    icon: '📱',
+    title: 'Add Staff Alert Numbers',
+    body: "Add your phone number and your staff's so everyone gets an SMS the moment an order or reservation comes in.",
+    action: `<button onclick="closeOnboarding();setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)" style="width:100%;padding:11px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-weight:800;cursor:pointer;margin-top:12px">Jump to Staff Numbers ↓</button>`,
+  },
+  {
+    icon: '📞',
+    title: 'Test Your Agent',
+    body: 'Call the live demo now. Try placing an order — it should appear in the board in seconds.',
+    action: `<a href="tel:+17329781797" style="display:block;text-align:center;padding:11px;background:var(--accent);color:#1a0a00;border-radius:9px;font-weight:800;text-decoration:none;margin-top:12px">📞 Call (732) 978-1797 — Live Demo</a>`,
+  },
+  {
+    icon: '↩️',
+    title: 'Forward Your Calls',
+    body: 'Set your restaurant\'s phone to forward unanswered calls to your OrderTaker number. Most carriers accept this code:<br><br><code style="background:var(--card2);padding:6px 14px;border-radius:6px;font-size:13px;letter-spacing:1px">*21*+17329781797#</code><br><br>Or call your carrier — takes under 2 minutes.',
+    action: '',
+  },
+  {
+    icon: '🎉',
+    title: "You're Live!",
+    body: "Your AI phone agent is now answering calls 24/7. Every order and reservation appears here in real time.<br><br>Welcome to OrderTaker, Commander.",
+    action: `<button onclick="closeOnboarding()" style="width:100%;padding:11px;background:var(--green);color:#052e16;border:none;border-radius:9px;font-weight:800;cursor:pointer;margin-top:12px;font-size:15px">Let's Go! 🚀</button>`,
+  }
+];
+
+let obStep = 1;
+
+function showOnboarding() {
+  obStep = 1;
+  document.getElementById('onboardingOverlay').style.display = 'flex';
+  renderObStep();
+}
+
+function closeOnboarding() {
+  document.getElementById('onboardingOverlay').style.display = 'none';
+  localStorage.setItem('ot_onboarding_done', '1');
+}
+
+function renderObStep() {
+  const s = OB_STEPS[obStep - 1];
+  document.getElementById('ob-step-content').innerHTML = `
+    <div style="font-size:36px;margin-bottom:10px">${s.icon}</div>
+    <div style="font-size:11px;color:var(--accent);font-weight:800;letter-spacing:1px;margin-bottom:6px">STEP ${obStep} OF 5</div>
+    <h3 style="font-size:20px;font-weight:800;margin-bottom:10px">${s.title}</h3>
+    <p style="color:var(--text2);font-size:14px;line-height:1.7">${s.body}</p>
+    ${s.action}`;
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`ob-dot-${i}`).style.background = i <= obStep ? 'var(--accent)' : 'var(--border)';
+  }
+  document.getElementById('ob-back-btn').style.display = obStep > 1 ? 'block' : 'none';
+  const next = document.getElementById('ob-next-btn');
+  next.style.display = obStep === 5 ? 'none' : 'block';
+}
+
+function obNext() { if (obStep < 5) { obStep++; renderObStep(); } }
+function obPrev() { if (obStep > 1) { obStep--; renderObStep(); } }
+
+// ── INIT ─────────────────────────────────────────────────────────────────
 async function init() {
   const { data: rest, error } = await sb
     .from('ot_restaurants')
@@ -557,6 +730,9 @@ async function init() {
   await loadStats();
   await loadReservations();
   await loadScheduleSettings();
+  await loadStaffNumbers();
+
+  if (!localStorage.getItem('ot_onboarding_done')) setTimeout(showOnboarding, 800);
 
   // Realtime: refresh whenever orders change
   sb.channel('ot_orders_changes')
