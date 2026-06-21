@@ -542,10 +542,40 @@
   <h2>Simple, transparent pricing.<br>No surprises.</h2>
   <p class="section-sub" style="margin:0 auto 40px">Flat monthly pricing. The agent auto-pauses when you're closed so not a single minute goes to waste.</p>
 
+  <!-- PLAN SELECTOR -->
+  <div id="plan-selector" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:36px">
+    <button class="plan-sel-btn" data-plan="starter" onclick="selectPricingPlan('starter',this)" style="padding:10px 22px;border-radius:10px;border:2px solid rgba(255,107,53,0.25);background:transparent;color:#9A7575;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s">Starter<br><span style="font-size:12px;font-weight:400">$199/mo</span></button>
+    <button class="plan-sel-btn plan-sel-active" data-plan="pro" onclick="selectPricingPlan('pro',this)" style="padding:10px 22px;border-radius:10px;border:2px solid #FF6B35;background:rgba(255,107,53,0.1);color:#FF6B35;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s">Pro ⭐<br><span style="font-size:12px;font-weight:400">$299/mo</span></button>
+    <button class="plan-sel-btn" data-plan="business" onclick="selectPricingPlan('business',this)" style="padding:10px 22px;border-radius:10px;border:2px solid rgba(255,107,53,0.25);background:transparent;color:#9A7575;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s">Business<br><span style="font-size:12px;font-weight:400">$499/mo</span></button>
+    <button class="plan-sel-btn" data-plan="enterprise" onclick="selectPricingPlan('enterprise',this)" style="padding:10px 22px;border-radius:10px;border:2px solid rgba(255,107,53,0.25);background:transparent;color:#9A7575;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s">Enterprise<br><span style="font-size:12px;font-weight:400">$799/mo</span></button>
+  </div>
+  <script>
+  function selectPricingPlan(plan, btn) {
+    document.querySelectorAll('.plan-sel-btn').forEach(b => {
+      b.style.border = '2px solid rgba(255,107,53,0.25)';
+      b.style.background = 'transparent';
+      b.style.color = '#9A7575';
+    });
+    btn.style.border = '2px solid #FF6B35';
+    btn.style.background = 'rgba(255,107,53,0.1)';
+    btn.style.color = '#FF6B35';
+    document.querySelectorAll('.price-card[data-plan]').forEach(c => {
+      c.style.boxShadow = '';
+      c.style.transform = '';
+    });
+    const card = document.querySelector('.price-card[data-plan="' + plan + '"]');
+    if (card) {
+      card.style.boxShadow = '0 0 0 2px #FF6B35, 0 8px 32px rgba(255,107,53,0.2)';
+      card.style.transform = 'translateY(-4px)';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+  </script>
+
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1140px;margin:0 auto;align-items:start">
 
     <!-- STARTER -->
-    <div class="price-card" style="border-color:rgba(255,107,53,0.2)">
+    <div class="price-card" data-plan="starter" style="border-color:rgba(255,107,53,0.2)">
       <div class="price-name" style="color:var(--text2)">STARTER</div>
       <div>
         <span class="price-amount">$199</span>
@@ -568,7 +598,7 @@
     </div>
 
     <!-- PRO (HERO) -->
-    <div class="price-card featured">
+    <div class="price-card featured" data-plan="pro">
       <div class="price-badge">MOST POPULAR</div>
       <div class="price-name">PRO</div>
       <div>
@@ -596,7 +626,7 @@
     </div>
 
     <!-- BUSINESS -->
-    <div class="price-card" style="border-color:rgba(255,107,53,0.2)">
+    <div class="price-card" data-plan="business" style="border-color:rgba(255,107,53,0.2)">
       <div class="price-name" style="color:var(--text2)">BUSINESS</div>
       <div>
         <span class="price-amount">$499</span>
@@ -619,7 +649,7 @@
     </div>
 
     <!-- ENTERPRISE -->
-    <div class="price-card" style="border-color:rgba(255,107,53,0.2)">
+    <div class="price-card" data-plan="enterprise" style="border-color:rgba(255,107,53,0.2)">
       <div class="price-name" style="color:var(--text2)">ENTERPRISE</div>
       <div>
         <span class="price-amount" style="font-size:44px">$799</span>

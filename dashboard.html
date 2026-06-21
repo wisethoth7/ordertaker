@@ -131,6 +131,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <button class="dash-tab active" onclick="switchTab('orders')" id="tab-btn-orders">📦 Orders</button>
   <button class="dash-tab" onclick="switchTab('billing')" id="tab-btn-billing">💳 Plan &amp; Billing</button>
   <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
+  <button class="dash-tab" onclick="switchTab('checklist')" id="tab-btn-checklist">✅ Setup Checklist</button>
 </div>
 
 <div id="panel-orders">
@@ -371,6 +372,16 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   </div>
   <div id="call-log-summary" style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap"></div>
 </div><!-- end panel-calls -->
+
+<!-- SETUP CHECKLIST PANEL -->
+<div id="panel-checklist" style="display:none;padding:24px;max-width:640px;margin:0 auto">
+  <div style="font-size:18px;font-weight:800;margin-bottom:6px">Setup Checklist</div>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Complete these 5 steps to get your AI agent live and answering calls.</div>
+  <div style="background:var(--card2);border-radius:8px;height:8px;margin-bottom:24px;overflow:hidden">
+    <div id="checklist-bar" style="height:100%;background:var(--green);border-radius:8px;transition:width .4s;width:0%"></div>
+  </div>
+  <div id="checklist-items"></div>
+</div><!-- end panel-checklist -->
 
 <!-- ONBOARDING WALKTHROUGH MODAL -->
 <div id="onboardingOverlay">
@@ -788,9 +799,65 @@ function switchTab(tab) {
   document.getElementById('panel-orders').style.display = tab === 'orders' ? '' : 'none';
   document.getElementById('panel-billing').style.display = tab === 'billing' ? 'block' : 'none';
   document.getElementById('panel-calls').style.display = tab === 'calls' ? 'block' : 'none';
+  document.getElementById('panel-checklist').style.display = tab === 'checklist' ? 'block' : 'none';
   document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.id === 'tab-btn-' + tab));
   if (tab === 'billing') loadBillingData();
   if (tab === 'calls') loadCallLogs();
+  if (tab === 'checklist') renderChecklist();
+}
+
+// ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
+const CHECKLIST_STEPS = [
+  {
+    id: 'menu', icon: '📋', title: 'Upload Your Menu',
+    body: 'Add your items — prices, descriptions, and allergens. The AI learns your full menu instantly.',
+    cta: `<a href="menu-upload.html" style="display:inline-block;padding:9px 18px;background:var(--accent);color:#1a0a00;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;margin-top:10px">Open Menu Upload →</a>`
+  },
+  {
+    id: 'staff', icon: '📱', title: 'Add Staff Alert Numbers',
+    body: "Add your phone number and your staff's so everyone gets an SMS the moment an order or reservation comes in.",
+    cta: `<button onclick="switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)" style="padding:9px 18px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;margin-top:10px">Jump to Staff Numbers ↓</button>`
+  },
+  {
+    id: 'test', icon: '📞', title: 'Test Your Agent',
+    body: 'Call the live demo and try placing an order — it should appear in the board in seconds.',
+    cta: `<a href="tel:+17329781797" style="display:inline-block;padding:9px 18px;background:var(--accent);color:#1a0a00;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;margin-top:10px">📞 Call (732) 978-1797</a>`
+  },
+  {
+    id: 'forward', icon: '↩️', title: 'Forward Your Calls',
+    body: `Set your restaurant's phone to forward unanswered calls to your OrderTaker number. Most carriers accept:<br><br><code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:12px;letter-spacing:1px">*21*+17329781797#</code><br><br>Or call your carrier — takes under 2 minutes.`,
+    cta: ''
+  },
+  {
+    id: 'live', icon: '🎉', title: "You're Live!",
+    body: "Your AI phone agent is now answering calls 24/7. Every order and reservation appears in the Orders tab in real time.",
+    cta: ''
+  }
+];
+
+function renderChecklist() {
+  const done = JSON.parse(localStorage.getItem('ot_checklist') || '{}');
+  const completed = CHECKLIST_STEPS.filter(s => done[s.id]).length;
+  document.getElementById('checklist-bar').style.width = (completed / CHECKLIST_STEPS.length * 100) + '%';
+  document.getElementById('checklist-items').innerHTML = CHECKLIST_STEPS.map((step, i) => {
+    const isDone = !!done[step.id];
+    return `<div style="display:flex;gap:14px;padding:18px;background:${isDone ? 'rgba(74,222,128,0.04)' : 'var(--card)'};border:1px solid ${isDone ? 'rgba(74,222,128,0.2)' : 'var(--border)'};border-radius:12px;margin-bottom:10px;transition:all .2s">
+      <div onclick="toggleCheck('${step.id}')" style="width:26px;height:26px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};background:${isDone ? 'var(--green)' : 'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#052e16;font-weight:800;transition:all .2s;margin-top:2px">${isDone ? '✓' : ''}</div>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:800;color:${isDone ? 'var(--green)' : 'var(--accent)'};letter-spacing:.8px;margin-bottom:3px">STEP ${i + 1} OF 5</div>
+        <div style="font-size:15px;font-weight:800;margin-bottom:5px;${isDone ? 'opacity:.5' : ''}">${step.icon} ${step.title}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.65">${step.body}</div>
+        ${step.cta ? `<div>${step.cta}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCheck(id) {
+  const done = JSON.parse(localStorage.getItem('ot_checklist') || '{}');
+  done[id] = !done[id];
+  localStorage.setItem('ot_checklist', JSON.stringify(done));
+  renderChecklist();
 }
 
 async function loadCallLogs() {

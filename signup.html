@@ -228,7 +228,9 @@
   <div class="success-card" id="successCard">
     <div class="icon">🎉</div>
     <h2>You're all set!</h2>
-    <p>Thanks for signing up. Our team will reach out within 24 hours to get your restaurant's menu and start setting up your AI agent.</p>
+    <p>Thanks for signing up. Complete your payment below to activate your AI agent within 24 hours.</p>
+    <a id="stripePayBtn" href="#" style="display:block;margin-top:20px;padding:14px;background:var(--accent);color:#1a0000;font-weight:800;font-size:14px;border-radius:10px;text-decoration:none">Complete Payment →</a>
+    <p style="font-size:11px;color:var(--text2);margin-top:10px">7-day money-back guarantee · Cancel anytime</p>
   </div>
 </div>
 
@@ -244,6 +246,11 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month', enterprise: 'Contact Us' };
+const STRIPE_LINKS = {
+  starter: 'mailto:thothwisdom7@gmail.com?subject=OrderTaker+Starter+Plan+%E2%80%94+Ready+to+Pay',
+  pro: 'https://buy.stripe.com/bJefZaa209bLa4V9cv18c00',
+  business: 'mailto:thothwisdom7@gmail.com?subject=OrderTaker+Business+Plan+%E2%80%94+Ready+to+Pay',
+};
 
 function selectPlan(el) {
   document.querySelectorAll('.plan-opt').forEach(p => {
@@ -307,6 +314,17 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     return;
   }
 
+  const payBtn = document.getElementById('stripePayBtn');
+  if (plan === 'pro') {
+    payBtn.href = STRIPE_LINKS.pro;
+    payBtn.textContent = 'Complete Payment — $299/month →';
+  } else if (plan === 'starter') {
+    payBtn.href = STRIPE_LINKS.starter;
+    payBtn.textContent = 'Request Starter Setup — $199/month →';
+  } else if (plan === 'business') {
+    payBtn.href = STRIPE_LINKS.business;
+    payBtn.textContent = 'Request Business Setup — $499/month →';
+  }
   form.style.display = 'none';
   document.getElementById('successCard').style.display = 'block';
 });
