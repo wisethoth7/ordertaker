@@ -314,6 +314,20 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     return;
   }
 
+  // Fire welcome email (non-blocking)
+  const PLAN_MINUTES = { starter: '1,000', pro: '2,000', business: '5,000', enterprise: '10,000' };
+  fetch('https://hvyfeebazmiqateniupm.supabase.co/functions/v1/send-welcome-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: data.email,
+      name: data.owner_name,
+      product: 'ordertaker',
+      plan: plan.charAt(0).toUpperCase() + plan.slice(1),
+      minutes: PLAN_MINUTES[plan] || '2,000'
+    })
+  }).catch(() => {});
+
   const payBtn = document.getElementById('stripePayBtn');
   if (plan === 'pro') {
     payBtn.href = STRIPE_LINKS.pro;
@@ -329,6 +343,12 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   document.getElementById('successCard').style.display = 'block';
 });
 </script>
-
+<script src="ra-widget.js"></script>
+<script>
+initRa({
+  accentColor: '#FF6B35',
+  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help prospective customers with: choosing the right plan (Starter $199, Pro $299, Business $499, Enterprise $799), understanding what is included, the signup process, and what happens after they sign up. For billing questions, direct to thothwisdom7@gmail.com.'
+});
+</script>
 </body>
 </html>
