@@ -110,6 +110,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   .stats{flex-wrap:wrap}
   .stat{min-width:45%;margin-right:8px;margin-bottom:8px}
 }
+@media(max-width:600px){
+  #dash-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 8px!important}
+  .dash-tab{white-space:nowrap;flex-shrink:0;padding:12px 12px;font-size:12px}
+}
 .dash-tab{padding:12px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.3px}
 .dash-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .dash-tab:hover:not(.active){color:var(--text)}
