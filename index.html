@@ -101,7 +101,7 @@
   .hero-note { margin-top: 16px; font-size: 12px; color: var(--text2); }
 
   /* PHONE MOCKUP */
-  .phone-section { padding: 0 24px 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .phone-section { padding: 0 24px 80px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 40px; }
   .phone-wrap { position: relative; max-width: 320px; }
   .phone {
     width: 280px; background: #1A0707; border-radius: 36px;
@@ -285,7 +285,7 @@
   /* FOOTER */
   footer {
     padding: 32px 48px; border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
     color: var(--text2); font-size: 13px;
   }
 
@@ -302,7 +302,6 @@
     .roi-stat { margin-right: 0; margin-bottom: 16px; }
     .steps { grid-template-columns: repeat(2, 1fr); gap: 24px; }
     .steps::before { display: none; }
-    footer { flex-direction: column; gap: 10px; text-align: center; }
   }
 </style>
 </head>
@@ -314,6 +313,7 @@
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How it works</a></li>
+    <li><a href="demo.html">Try Demo</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
@@ -327,9 +327,8 @@
   <p class="hero-sub">OrderTaker answers every call, takes the full order, and sends a confirmation — without touching your POS or interrupting your staff. Plans from $199/month. No per-minute billing. No surprises.</p>
   <div class="hero-actions">
     <a href="signup.html" class="btn-primary">Start Now — 7-Day Money-Back</a>
-    <a href="#how" class="btn-secondary">See how it works</a>
+    <a href="demo.html" class="btn-secondary">🎙 Try the Demo</a>
   </div>
-  <p style="margin-top:18px;font-size:14px;color:var(--text2)">or <a href="tel:+17329781797" style="color:var(--accent);font-weight:700;text-decoration:none">📞 call the live demo: (732) 978-1797</a></p>
   <p class="hero-note"><span style="color:var(--green)">✓</span> From $199/month &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> Actually takes full orders &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> No per-minute billing &nbsp;·&nbsp; <span style="color:var(--green)">✓</span> Cancel anytime</p>
 </section>
 
@@ -374,9 +373,57 @@
     </div>
     <div class="sms-badge">
       <div class="sms-header">✓ SMS SENT TO CUSTOMER</div>
-      Order confirmed! Pickup ready in ~25 min. Mario Kitchen (201) 555-0100
+      Order confirmed! Pickup ready in ~25 min. Mario Kitchen
     </div>
   </div>
+
+  <!-- PHONE 2 — Rivera's Kitchen -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="call-header">
+          <div class="call-label">INCOMING CALL — AI ANSWERING</div>
+          <div class="call-name">Rivera's Kitchen</div>
+        </div>
+        <div class="call-body">
+          <div class="ai-bubble">
+            "¡Gracias por llamar a Rivera's Kitchen! I'm getting your order started — can I get your name?"
+          </div>
+          <div class="order-line"><span>1x Large Pepperoni Pizza</span> $18.00</div>
+          <div class="order-line"><span>1x Wings 12pc (BBQ)</span> $14.00</div>
+          <div class="order-line"><span>1x Cheesesteak</span> $13.50</div>
+          <div class="order-line"><span>1x Cheeseburger</span> $12.00</div>
+          <div class="ai-bubble" style="margin-top:10px">
+            "Can I add loaded fries for $6? They go great with wings."
+          </div>
+          <div class="order-line" style="color:var(--green)"><span>+ 1x Loaded Fries (upsell)</span> $6.00</div>
+          <div class="order-line" style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:4px">
+            <strong style="color:var(--text)">Total</strong> <span>$63.50</span>
+          </div>
+          <div class="ai-bubble" style="margin-top:10px;font-size:12px;color:var(--text2)">
+            "Ready in about 30 minutes — see you then!"
+          </div>
+          <div class="confirm-btn">✓ SMS Confirmation Sent</div>
+        </div>
+      </div>
+    </div>
+    <div class="sms-badge">
+      <div class="sms-header">✓ SMS SENT TO CUSTOMER</div>
+      Order confirmed! Ready in ~30 min. Rivera's Kitchen
+    </div>
+  </div>
+</div>
+
+<!-- LANGUAGE NOTE (O9) -->
+<div style="text-align:center;padding:0 24px 40px">
+  <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1.5px;margin-bottom:12px">AGENT SPEAKS</div>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">
+    <span style="background:var(--accent-dim);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--accent)">🇺🇸 English</span>
+    <span style="background:var(--accent-dim);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--accent)">🇪🇸 Spanish</span>
+    <span style="background:var(--accent-dim);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--accent)">🇸🇦 Arabic</span>
+  </div>
+  <p style="font-size:12px;color:var(--text2)">Need another language? <a href="mailto:support@niledreamsdigital.com" style="color:var(--accent);text-decoration:none;font-weight:600">Contact us</a> — we add languages on request.</p>
 </div>
 
 <!-- SOCIAL PROOF -->
@@ -521,17 +568,35 @@
       </div>
     </div>
 
-    <!-- DEMO VIDEO — swap src to real YouTube embed URL when video is ready -->
+    <!-- DEMO VISUAL -->
     <div style="max-width:720px;margin:56px auto 0">
       <div class="section-label" style="text-align:center;margin-bottom:20px">SEE IT IN ACTION</div>
-      <div style="width:100%;aspect-ratio:16/9;border-radius:16px;border:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;overflow:hidden">
-        <div style="width:72px;height:72px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(255,107,53,0.4)">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#1a0000"><polygon points="5,3 19,12 5,21"/></svg>
+      <div style="width:100%;border-radius:16px;border:1px solid var(--border);background:var(--surface);padding:40px 24px;text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin-bottom:36px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px">📞</div>
+            <span style="font-size:11px;color:var(--text2);font-weight:700">Call Rings</span>
+          </div>
+          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 20px rgba(255,107,53,0.2)">🤖</div>
+            <span style="font-size:11px;color:var(--accent);font-weight:700">AI Answers</span>
+          </div>
+          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px">🍕</div>
+            <span style="font-size:11px;color:var(--text2);font-weight:700">Full Order Taken</span>
+          </div>
+          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;font-size:24px">✅</div>
+            <span style="font-size:11px;color:var(--green);font-weight:700">SMS Sent</span>
+          </div>
         </div>
-        <p style="color:var(--text2);font-size:14px;font-weight:600">Demo video coming soon</p>
-        <a href="tel:+17329781797" style="color:var(--accent);font-size:13px;font-weight:700;text-decoration:none">📞 Or call the live demo now: (732) 978-1797</a>
+        <p style="color:var(--text2);font-size:14px;margin-bottom:24px;line-height:1.6">The entire call — from ring to SMS confirmation — takes under 3 minutes and requires zero staff involvement.</p>
+        <a href="demo.html" class="btn-primary" style="display:inline-block;font-size:15px;padding:14px 32px;text-decoration:none">🎙 Try the Interactive Demo →</a>
+        <p style="margin-top:14px;font-size:12px;color:var(--text2)">Works in English, Spanish & Arabic · No signup needed</p>
       </div>
-      <p style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center">Watch AI answer a call and take a full order — real restaurant, live demo.</p>
     </div>
   </div>
 </div>
@@ -572,7 +637,7 @@
   }
   </script>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1140px;margin:0 auto;align-items:start">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1140px;margin:0 auto;align-items:stretch">
 
     <!-- STARTER -->
     <div class="price-card" data-plan="starter" style="border-color:rgba(255,107,53,0.2)">
@@ -620,8 +685,8 @@
         <div class="price-line">English, Spanish & Arabic support</div>
         <div class="price-line">Human escalation for complaints & complex requests</div>
       </div>
-      <a href="https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01" target="_blank" rel="noopener" class="btn-primary" style="display:block;text-align:center;font-size:15px;padding:14px">
-        Start 7-Day Money-Back Guarantee
+      <a href="https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01" target="_blank" rel="noopener" class="btn-primary" style="display:block;text-align:center;font-size:14px;padding:13px">
+        Get Pro — 7-Day Money-Back
       </a>
     </div>
 
@@ -632,9 +697,9 @@
         <span class="price-amount">$499</span>
         <span class="price-period">/month</span>
       </div>
-      <p class="price-note">5,000 minutes · $0.15/min after · Square POS included</p>
+      <p class="price-note">3,500 minutes · $0.15/min after · Square POS included</p>
       <div class="price-includes">
-        <div class="price-line">5,000 minutes/month included</div>
+        <div class="price-line">3,500 minutes/month included</div>
         <div class="price-line">Everything in Pro</div>
         <div class="price-line">Square POS integration — orders sync automatically</div>
         <div class="price-line">Multi-location dashboard — manage all in one place</div>
@@ -655,9 +720,9 @@
         <span class="price-amount" style="font-size:44px">$799</span>
         <span class="price-period">/month</span>
       </div>
-      <p class="price-note">10,000 minutes · $0.15/min after · 2-hour SLA</p>
+      <p class="price-note">6,000 minutes · $0.15/min after · 2-hour SLA</p>
       <div class="price-includes">
-        <div class="price-line">10,000 minutes/month included</div>
+        <div class="price-line">6,000 minutes/month included</div>
         <div class="price-line">Everything in Business</div>
         <div class="price-line">Toast + Clover POS integration</div>
         <div class="price-line">Unlimited staff alert numbers</div>
@@ -780,7 +845,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <span>© 2026 OrderTaker. All rights reserved.</span>
+  <span>© 2026 OrderTaker by Nile Dreams Digital</span>
   <span>AI Phone Agent for Restaurants</span>
 </footer>
 
@@ -796,7 +861,7 @@
 <script>
 initRa({
   accentColor: '#FF6B35',
-  systemPrompt: 'You are Ra, an AI support agent for OrderTaker — an AI-powered phone ordering system for restaurants. Help with: restaurant setup (menu upload, staff phones, call forwarding), plans (Starter $199/mo 1,000 min, Pro $299/mo 2,000 min, Business $499/mo 5,000 min + Square POS, Enterprise $799/mo 10,000 min + Toast/Clover), dashboard navigation, call logs, and billing. For billing or escalation, direct to support@niledreamsdigital.com.'
+  systemPrompt: 'You are Ra, an AI support agent for OrderTaker — an AI-powered phone ordering system for restaurants. Help with: restaurant setup (menu upload, staff phones, call forwarding), plans (Starter $199/mo 1,000 min, Pro $299/mo 2,000 min, Business $499/mo 3,500 min + Square POS, Enterprise $799/mo 6,000 min + Toast/Clover), dashboard navigation, call logs, and billing. For billing or escalation, direct to support@niledreamsdigital.com.'
 });
 </script>
 </body>

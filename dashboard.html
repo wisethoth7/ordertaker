@@ -136,6 +136,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <button class="dash-tab" onclick="switchTab('billing')" id="tab-btn-billing">💳 Plan &amp; Billing</button>
   <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
   <button class="dash-tab" onclick="switchTab('checklist')" id="tab-btn-checklist">✅ Setup Checklist</button>
+  <button class="dash-tab" onclick="switchTab('kitchen')" id="tab-btn-kitchen">🍳 Kitchen View</button>
 </div>
 
 <div id="panel-orders">
@@ -313,13 +314,13 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <div class="billing-plan-card" data-plan="business" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">BUSINESS</div>
       <div style="font-size:24px;font-weight:900">$499<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">5,000 min · $0.15/min overage<br>Square POS · 10 staff numbers</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">3,500 min · $0.15/min overage<br>Square POS · 10 staff numbers</div>
       <a href="https://buy.stripe.com/5kQ28kdec2Nn3Gx2O718c06" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Upgrade to Business</a>
     </div>
     <div class="billing-plan-card" data-plan="enterprise" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">ENTERPRISE</div>
       <div style="font-size:24px;font-weight:900">$799<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">10,000 min · $0.15/min overage<br>Toast/Clover · Unlimited staff · 2hr SLA</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">6,000 min · $0.15/min overage<br>Toast/Clover · Unlimited staff · 2hr SLA</div>
       <a href="https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Get Enterprise</a>
     </div>
   </div>
@@ -386,6 +387,106 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   </div>
   <div id="checklist-items"></div>
 </div><!-- end panel-checklist -->
+
+<!-- KITCHEN VIEW PANEL -->
+<div id="panel-kitchen" style="display:none;padding:20px;background:var(--bg);min-height:80vh">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px">🍳 Kitchen Display</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:3px">Live order queue — visible from across the kitchen</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
+      LIVE
+    </div>
+  </div>
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+    <!-- NEW column -->
+    <div style="flex:1;min-width:260px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--accent);margin-bottom:14px">🔴 New (2)</div>
+      <!-- Maria Garcia -->
+      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:20px;font-weight:900">Maria Garcia</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700">2 min ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1084</div>
+        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
+          <div>🫔 Chicken Enchiladas ×2</div>
+          <div>🍚 Rice &amp; Beans</div>
+          <div>🥑 Guacamole</div>
+        </div>
+        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $38.50</div>
+      </div>
+      <!-- Mike Johnson -->
+      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:20px;font-weight:900">Mike Johnson</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700">5 min ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1083</div>
+        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
+          <div>🍕 Pepperoni Pizza (Large)</div>
+          <div>🍗 Wings 8pc (Buffalo)</div>
+        </div>
+        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $34.00</div>
+      </div>
+    </div>
+    <!-- PREPARING column -->
+    <div style="flex:1;min-width:260px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--yellow);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--yellow);margin-bottom:14px">🟡 Preparing (2)</div>
+      <!-- James Carter -->
+      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:14px;padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:20px;font-weight:900">James Carter</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700">9 min ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">DELIVERY · #1082</div>
+        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
+          <div>🍔 BBQ Burger</div>
+          <div>🧅 Onion Rings</div>
+          <div style="color:var(--green)">✨ Root Beer Float</div>
+        </div>
+        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $29.75</div>
+      </div>
+      <!-- Sofia Rodriguez -->
+      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:14px;padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:20px;font-weight:900">Sofia Rodriguez</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700">11 min ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1081</div>
+        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
+          <div>🌮 Tacos al Pastor ×3</div>
+          <div>🫔 Quesadilla</div>
+          <div>🥤 Horchata</div>
+        </div>
+        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $31.00</div>
+      </div>
+    </div>
+    <!-- READY column -->
+    <div style="flex:1;min-width:260px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--green);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--green);margin-bottom:14px">🟢 Ready (1)</div>
+      <!-- Luis Hernandez -->
+      <div style="background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.25);border-left:4px solid var(--green);border-radius:14px;padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:20px;font-weight:900">Luis Hernandez</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700">14 min ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1080</div>
+        <div style="font-size:16px;line-height:2;border-top:1px solid rgba(74,222,128,0.15);padding-top:10px">
+          <div>🥩 Cheesesteak</div>
+          <div>🍟 Loaded Fries</div>
+          <div>🍋 Lemonade</div>
+        </div>
+        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--green)">Total: $26.50 ✓ READY</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text2);text-align:center">
+    Demo data shown above — live orders from your customers will appear here automatically once your agent is active.
+  </div>
+</div><!-- end panel-kitchen -->
 
 <!-- ONBOARDING WALKTHROUGH MODAL -->
 <div id="onboardingOverlay">
@@ -793,8 +894,8 @@ async function saveAlertEmail() {
 const PLAN_CONFIG = {
   starter:    { name: 'Starter',    price: 199, minutes: 1000,  overage: 0.20, staff_limit: 2 },
   pro:        { name: 'Pro',        price: 299, minutes: 2000,  overage: 0.20, staff_limit: 5 },
-  business:   { name: 'Business',   price: 499, minutes: 5000,  overage: 0.15, staff_limit: 10 },
-  enterprise: { name: 'Enterprise', price: 799, minutes: 10000, overage: 0.15, staff_limit: null },
+  business:   { name: 'Business',   price: 499, minutes: 3500,  overage: 0.15, staff_limit: 10 },
+  enterprise: { name: 'Enterprise', price: 799, minutes: 6000,  overage: 0.15, staff_limit: null },
 };
 const PLAN_ORDER = ['starter', 'pro', 'business', 'enterprise'];
 let currentPlanKey = 'pro';
@@ -804,6 +905,7 @@ function switchTab(tab) {
   document.getElementById('panel-billing').style.display = tab === 'billing' ? 'block' : 'none';
   document.getElementById('panel-calls').style.display = tab === 'calls' ? 'block' : 'none';
   document.getElementById('panel-checklist').style.display = tab === 'checklist' ? 'block' : 'none';
+  document.getElementById('panel-kitchen').style.display = tab === 'kitchen' ? 'block' : 'none';
   document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.id === 'tab-btn-' + tab));
   if (tab === 'billing') loadBillingData();
   if (tab === 'calls') loadCallLogs();
@@ -824,12 +926,12 @@ const CHECKLIST_STEPS = [
   },
   {
     id: 'test', icon: '📞', title: 'Test Your Agent',
-    body: 'Call the live demo and try placing an order — it should appear in the board in seconds.',
-    cta: `<a href="tel:+17329781797" style="display:inline-block;padding:9px 18px;background:var(--accent);color:#1a0a00;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;margin-top:10px">📞 Call (732) 978-1797</a>`
+    body: 'Call your OrderTaker number and try placing an order — it should appear in the board in seconds. Your agent number is shown in your account settings.',
+    cta: ''
   },
   {
     id: 'forward', icon: '↩️', title: 'Forward Your Calls',
-    body: `Set your restaurant's phone to forward unanswered calls to your OrderTaker number. Most carriers accept:<br><br><code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:12px;letter-spacing:1px">*21*+17329781797#</code><br><br>Or call your carrier — takes under 2 minutes.`,
+    body: `Set your restaurant's phone to forward unanswered calls to your OrderTaker number. Most carriers accept:<br><br><code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:12px;letter-spacing:1px">*21*+1[your-number]#</code><br><br>Or call your carrier — takes under 2 minutes.`,
     cta: ''
   },
   {
