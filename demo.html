@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Try the Demo — OrderTaker AI Phone Agent</title>
+<title>Demo — OrderTaker AI Phone Agent</title>
 <link rel="icon" href="icons/ot-icon-96.png?v=2">
-<meta name="description" content="See exactly how OrderTaker answers your restaurant's phone calls. Interactive demo in English, Spanish, and Arabic.">
+<meta name="description" content="See exactly how OrderTaker answers your restaurant's phone and takes a full order — automatically.">
 <style>
   :root {
     --bg: #0A0303;
@@ -20,10 +20,8 @@
     --green: #4ADE80;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; }
 
-  /* NAV */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     padding: 16px 48px;
@@ -31,139 +29,94 @@
     background: rgba(10,3,3,0.9); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
-  .nav-logo { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
-  .nav-logo span { color: var(--accent); }
+  .nav-logo { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .nav-links { display: flex; gap: 28px; list-style: none; }
   .nav-links a { color: var(--text2); text-decoration: none; font-size: 14px; transition: color 0.2s; }
   .nav-links a:hover, .nav-links a.active { color: var(--text); }
-  .nav-cta { padding: 9px 22px; background: var(--accent); color: #1a0000; font-weight: 700; font-size: 13px; border-radius: 8px; text-decoration: none; transition: opacity 0.2s; }
-  .nav-cta:hover { opacity: 0.88; }
+  .nav-cta { padding: 9px 22px; background: var(--accent); color: #1a0000; font-weight: 700; font-size: 13px; border-radius: 8px; text-decoration: none; }
 
-  /* MAIN */
-  main { padding: 120px 24px 80px; max-width: 900px; margin: 0 auto; }
+  main { padding: 120px 24px 80px; max-width: 800px; margin: 0 auto; }
 
-  /* HERO */
-  .demo-hero { text-align: center; margin-bottom: 52px; }
-  .demo-hero h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 900; letter-spacing: -1px; line-height: 1.15; margin-bottom: 16px; }
-  .demo-hero h1 span { color: var(--accent); }
-  .demo-hero p { font-size: 17px; color: var(--text2); max-width: 520px; margin: 0 auto 32px; }
+  .hero { text-align: center; margin-bottom: 52px; }
+  .hero h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 900; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { font-size: 16px; color: var(--text2); max-width: 480px; margin: 0 auto; }
 
-  /* LANGUAGE PICKER */
-  .lang-section { margin-bottom: 36px; text-align: center; }
-  .lang-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); margin-bottom: 14px; }
-  .lang-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .lang-btn {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: 10px;
-    background: var(--card); border: 1px solid var(--border);
-    color: var(--text); font-size: 14px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .lang-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-  .lang-note { margin-top: 12px; font-size: 12px; color: var(--text2); }
-  .lang-note a { color: var(--accent); text-decoration: none; }
+  /* looping animation widget */
+  .otd { --ot-orange:#FF6B35;--ot-ink:#FFF5F5;--ot-line:rgba(255,107,53,.18);--ot-card:#1A0707;--ot-sub:#9A7575;
+    display:flex;gap:18px;flex-wrap:wrap;margin-bottom:52px; }
+  .otd * { box-sizing:border-box; }
+  .otd .panel { flex:1;min-width:260px;background:var(--ot-card);border:1px solid var(--ot-line);
+    border-radius:18px;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,.4); }
+  .otd .call { display:flex;align-items:center;gap:12px;margin-bottom:14px; }
+  .otd .avatar { width:46px;height:46px;border-radius:50%;background:var(--ot-orange);color:#1a0000;
+    display:flex;align-items:center;justify-content:center;font-size:22px;flex:none; }
+  .otd .who { font-weight:800;color:var(--ot-ink);font-size:15px; }
+  .otd .status { font-size:12px;color:var(--ot-orange);font-weight:700; }
+  .otd .eq { display:flex;align-items:flex-end;gap:4px;height:44px;margin:6px 0 14px; }
+  .otd .eq i { width:6px;background:var(--ot-orange);border-radius:3px;height:100%;
+    transform-origin:bottom;opacity:.85;font-style:normal; }
+  .otd .eq i:nth-child(1){animation:otb .60s infinite ease-in-out}
+  .otd .eq i:nth-child(2){animation:otb .50s infinite ease-in-out}
+  .otd .eq i:nth-child(3){animation:otb .70s infinite ease-in-out}
+  .otd .eq i:nth-child(4){animation:otb .45s infinite ease-in-out}
+  .otd .eq i:nth-child(5){animation:otb .65s infinite ease-in-out}
+  .otd .eq i:nth-child(6){animation:otb .55s infinite ease-in-out}
+  @keyframes otb{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+  .otd .caps { position:relative;height:52px; }
+  .otd .caps span { position:absolute;inset:0;font-size:14px;color:var(--ot-ink);opacity:0;line-height:1.35; }
+  .otd .caps span:nth-child(1){animation:c1 12s infinite}
+  .otd .caps span:nth-child(2){animation:c2 12s infinite}
+  .otd .caps span:nth-child(3){animation:c3 12s infinite}
+  .otd .caps span:nth-child(4){animation:c4 12s infinite}
+  .otd .caps span:nth-child(5){animation:c5 12s infinite}
+  @keyframes c1{0%,6%{opacity:0}9%,22%{opacity:1}25%,100%{opacity:0}}
+  @keyframes c2{0%,24%{opacity:0}27%,40%{opacity:1}43%,100%{opacity:0}}
+  @keyframes c3{0%,42%{opacity:0}45%,58%{opacity:1}61%,100%{opacity:0}}
+  @keyframes c4{0%,60%{opacity:0}63%,76%{opacity:1}79%,100%{opacity:0}}
+  @keyframes c5{0%,78%{opacity:0}81%,96%{opacity:1}99%,100%{opacity:0}}
+  .otd .tkh { display:flex;justify-content:space-between;align-items:center;
+    border-bottom:2px dashed var(--ot-line);padding-bottom:10px;margin-bottom:6px; }
+  .otd .tkh b { font-size:15px;color:var(--ot-ink); }
+  .otd .tkh span { font-size:12px;color:var(--ot-sub); }
+  .otd ul.tk { list-style:none;margin:0;padding:0; }
+  .otd ul.tk li { display:flex;justify-content:space-between;font-size:14px;color:var(--ot-ink);
+    padding:7px 0;opacity:0;border-bottom:1px solid rgba(255,107,53,.07); }
+  .otd ul.tk li:last-child { border-bottom:none; }
+  .otd ul.tk li:nth-child(1){animation:it1 12s infinite}
+  .otd ul.tk li:nth-child(2){animation:it2 12s infinite}
+  .otd ul.tk li:nth-child(3){animation:it3 12s infinite}
+  .otd ul.tk li:nth-child(4){animation:it4 12s infinite}
+  @keyframes it1{0%,9%{opacity:0;transform:translateY(6px)}13%,96%{opacity:1;transform:none}100%{opacity:0}}
+  @keyframes it2{0%,27%{opacity:0;transform:translateY(6px)}31%,96%{opacity:1;transform:none}100%{opacity:0}}
+  @keyframes it3{0%,45%{opacity:0;transform:translateY(6px)}49%,96%{opacity:1;transform:none}100%{opacity:0}}
+  @keyframes it4{0%,63%{opacity:0;transform:translateY(6px)}67%,96%{opacity:1;transform:none}100%{opacity:0}}
+  .otd .sent { margin-top:12px;text-align:center;font-weight:800;color:#4ADE80;font-size:14px;
+    opacity:0;animation:snt 12s infinite; }
+  @keyframes snt{0%,80%{opacity:0;transform:scale(.9)}84%,97%{opacity:1;transform:scale(1)}100%{opacity:0}}
+  @media(max-width:560px){.otd{flex-direction:column}}
 
-  /* PHONE DEMO */
-  .phone-wrap { display: flex; justify-content: center; margin-bottom: 52px; }
-  .phone {
-    width: 320px; background: #111; border-radius: 36px;
-    border: 6px solid #222; box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px #333;
-    overflow: hidden; position: relative;
-  }
-  .phone-bar {
-    background: #1a1a1a; padding: 12px 20px 10px;
-    display: flex; align-items: center; gap: 10px;
-    border-bottom: 1px solid #2a2a2a;
-  }
-  .phone-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-  .phone-bar-info { flex: 1; }
-  .phone-bar-name { font-size: 13px; font-weight: 800; color: #fff; }
-  .phone-bar-status { font-size: 11px; color: #4ADE80; font-weight: 600; }
-  .phone-timer { font-size: 12px; color: #666; font-weight: 700; }
-  .phone-msgs { padding: 16px 14px; min-height: 320px; display: flex; flex-direction: column; gap: 10px; background: #111; }
-  .bubble {
-    max-width: 82%; font-size: 13px; line-height: 1.5; padding: 10px 14px; border-radius: 16px;
-    animation: fadeUp 0.3s ease;
-  }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .bubble.agent { align-self: flex-start; background: #1e1e1e; border: 1px solid #2d2d2d; color: #e0e0e0; border-radius: 4px 16px 16px 16px; }
-  .bubble.agent .agent-label { font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .bubble.caller { align-self: flex-end; background: var(--accent); color: #1a0000; font-weight: 600; border-radius: 16px 4px 16px 16px; }
-  .bubble.order-confirm { align-self: stretch; background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); border-radius: 12px; color: var(--green); font-size: 12px; padding: 12px 14px; max-width: 100%; }
-  .order-confirm-title { font-weight: 800; font-size: 13px; margin-bottom: 6px; }
-  .order-confirm-item { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(74,222,128,0.1); }
-  .order-confirm-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 6px; font-size: 13px; color: var(--green); }
-  .typing-indicator { align-self: flex-start; padding: 10px 14px; }
-  .dots { display: flex; gap: 4px; }
-  .dots span { width: 6px; height: 6px; border-radius: 50%; background: #555; animation: dot-bounce 1.2s ease-in-out infinite; }
-  .dots span:nth-child(2) { animation-delay: 0.2s; }
-  .dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes dot-bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
-  .phone-actions { background: #1a1a1a; padding: 14px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; }
-  .phone-start-btn {
-    flex: 1; padding: 12px; background: var(--accent); color: #1a0000;
-    border: none; border-radius: 10px; font-size: 14px; font-weight: 800;
-    cursor: pointer; transition: opacity 0.2s;
-  }
-  .phone-start-btn:hover { opacity: 0.88; }
-  .phone-start-btn:disabled { opacity: 0.5; cursor: default; }
-  .phone-reset-btn {
-    padding: 12px 16px; background: transparent; color: var(--text2);
-    border: 1px solid #333; border-radius: 10px; font-size: 13px;
-    cursor: pointer; transition: color 0.2s;
-  }
-  .phone-reset-btn:hover { color: var(--text); }
-
-  /* HOW IT WORKS */
   .steps-section { margin-bottom: 52px; }
-  .steps-title { font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 28px; }
-  .steps-grid { display: flex; gap: 16px; flex-wrap: wrap; }
-  .step-card {
-    flex: 1; min-width: 200px; background: var(--card);
-    border: 1px solid var(--border); border-radius: 14px; padding: 22px;
-    text-align: center;
-  }
-  .step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-  .step-icon { font-size: 28px; margin-bottom: 10px; }
-  .step-title { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+  .steps-title { font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 24px; }
+  .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .step-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 16px; text-align: center; }
+  .step-icon { font-size: 26px; margin-bottom: 8px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+  .step-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
   .step-body { font-size: 12px; color: var(--text2); line-height: 1.5; }
 
-  /* MENU UPLOAD CONCEPT */
-  .menu-section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 52px; text-align: center; }
-  .menu-section h2 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
-  .menu-section p { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
-  .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 32px 24px; margin-bottom: 16px; transition: border-color 0.2s; }
-  .upload-zone:hover { border-color: var(--accent); }
-  .upload-icon { font-size: 36px; margin-bottom: 10px; }
-  .upload-zone p { color: var(--text2); font-size: 13px; margin-bottom: 0; }
-  .upload-zone strong { color: var(--accent); }
-  .format-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
-  .pill { background: var(--accent-dim); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: var(--accent); }
-  .or-divider { color: var(--text2); font-size: 12px; margin: 16px 0; position: relative; }
-  .or-divider::before, .or-divider::after { content: ''; display: inline-block; width: 80px; height: 1px; background: var(--border); vertical-align: middle; margin: 0 12px; }
-  .menu-note { font-size: 12px; color: var(--text2); }
-  .menu-note a { color: var(--accent); text-decoration: none; }
+  .cta-section { text-align: center; padding: 44px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; margin-bottom: 52px; }
+  .cta-section h2 { font-size: clamp(20px, 4vw, 32px); font-weight: 900; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .cta-section p { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+  .btn-primary { padding: 13px 28px; background: var(--accent); color: #1a0000; font-weight: 800; font-size: 14px; border-radius: 10px; text-decoration: none; display: inline-block; }
+  .btn-secondary { padding: 13px 28px; background: transparent; color: var(--text); font-weight: 700; font-size: 14px; border-radius: 10px; text-decoration: none; border: 1px solid var(--border); display: inline-block; }
 
-  /* CTA */
-  .cta-section { text-align: center; padding: 52px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; margin-bottom: 52px; }
-  .cta-section h2 { font-size: clamp(22px, 4vw, 36px); font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px; }
-  .cta-section p { color: var(--text2); font-size: 15px; margin-bottom: 28px; }
-  .cta-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-  .btn-primary { padding: 14px 32px; background: var(--accent); color: #1a0000; font-weight: 800; font-size: 15px; border-radius: 10px; text-decoration: none; transition: opacity 0.2s; display: inline-block; }
-  .btn-primary:hover { opacity: 0.88; }
-  .btn-secondary { padding: 14px 32px; background: transparent; color: var(--text); font-weight: 700; font-size: 15px; border-radius: 10px; text-decoration: none; border: 1px solid var(--border); transition: border-color 0.2s; display: inline-block; }
-  .btn-secondary:hover { border-color: var(--accent); }
-
-  /* FOOTER */
   footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--text2); font-size: 12px; }
 
-  /* RESPONSIVE */
   @media(max-width: 640px) {
     nav { padding: 16px 20px; }
     .nav-links { display: none; }
-    main { padding: 100px 16px 60px; }
-    .steps-grid { flex-direction: column; }
+    .steps-grid { grid-template-columns: repeat(2, 1fr); }
     footer { padding: 28px 16px; }
   }
 </style>
@@ -171,11 +124,11 @@
 <body>
 
 <nav>
-  <div class="nav-logo"><img src="icons/ot-icon-96.png" alt="" style="width:36px;height:36px;border-radius:8px"><span style="white-space:nowrap"><span style="color:var(--text)">Order</span><span style="color:var(--accent)">Taker</span></span></div>
+  <a href="index.html" class="nav-logo"><img src="icons/ot-icon-96.png" alt="" style="width:36px;height:36px;border-radius:8px"><span style="white-space:nowrap"><span style="color:var(--text)">Order</span><span style="color:var(--accent)">Taker</span></span></a>
   <ul class="nav-links">
     <li><a href="index.html#features">Features</a></li>
     <li><a href="index.html#how">How it works</a></li>
-    <li><a href="demo.html" class="active">Try Demo</a></li>
+    <li><a href="demo.html" class="active">Demo</a></li>
     <li><a href="index.html#pricing">Pricing</a></li>
     <li><a href="index.html#faq">FAQ</a></li>
   </ul>
@@ -184,39 +137,34 @@
 
 <main>
 
-  <!-- HERO -->
-  <div class="demo-hero">
-    <h1>Hear Your AI Agent <span>Take an Order</span></h1>
-    <p>Pick a language, press play, and watch a real phone order happen in seconds — exactly how your customers will experience it.</p>
+  <div class="hero">
+    <h1>Your Phone Answered.<br><span>Order Taken. Done.</span></h1>
+    <p>This is exactly what your customers hear when OrderTaker picks up — from the first ring to the kitchen ticket.</p>
   </div>
 
-  <!-- LANGUAGE PICKER -->
-  <div class="lang-section">
-    <div class="lang-label">Choose a language</div>
-    <div class="lang-buttons">
-      <button class="lang-btn active" onclick="setLang('en')" id="lang-en">🇺🇸 English</button>
-      <button class="lang-btn" onclick="setLang('es')" id="lang-es">🇪🇸 Español</button>
-      <button class="lang-btn" onclick="setLang('ar')" id="lang-ar">🇸🇦 Arabic</button>
+  <!-- LOOPING ANIMATION -->
+  <div class="otd">
+    <div class="panel">
+      <div class="call"><div class="avatar">&#9742;</div>
+        <div><div class="who">Mario's Kitchen</div><div class="status">&#9679; Agent on the call</div></div></div>
+      <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="caps">
+        <span>"Thanks for calling Mario's Kitchen! What can I get you?"</span>
+        <span>"One large pepperoni pizza &mdash; got it."</span>
+        <span>"Twelve buffalo wings and a cheesesteak&hellip;"</span>
+        <span>"&hellip;and a cheeseburger. Anything else?"</span>
+        <span>"Perfect &mdash; sending it to the kitchen now! &#127829;"</span>
+      </div>
     </div>
-    <div class="lang-note">Need a different language? <a href="mailto:support@niledreamsdigital.com">Contact us</a> — we can configure your agent for most languages.</div>
-  </div>
-
-  <!-- PHONE DEMO -->
-  <div class="phone-wrap">
-    <div class="phone">
-      <div class="phone-bar">
-        <div class="phone-icon">🍕</div>
-        <div class="phone-bar-info">
-          <div class="phone-bar-name">Mario's Kitchen</div>
-          <div class="phone-bar-status" id="call-status">● Ready to call</div>
-        </div>
-        <div class="phone-timer" id="call-timer"></div>
-      </div>
-      <div class="phone-msgs" id="phone-msgs"></div>
-      <div class="phone-actions">
-        <button class="phone-start-btn" id="start-btn" onclick="startDemo()">📞 Start Demo Call</button>
-        <button class="phone-reset-btn" onclick="resetDemo()" title="Reset">↺</button>
-      </div>
+    <div class="panel">
+      <div class="tkh"><b>Order #1042</b><span>James Carter</span></div>
+      <ul class="tk">
+        <li><span>1&times; Large Pepperoni Pizza</span><span>$16.00</span></li>
+        <li><span>12&times; Buffalo Wings</span><span>$11.50</span></li>
+        <li><span>1&times; Cheesesteak</span><span>$10.00</span></li>
+        <li><span>1&times; Cheeseburger</span><span>$8.50</span></li>
+      </ul>
+      <div class="sent">&#10003; Sent to kitchen</div>
     </div>
   </div>
 
@@ -228,55 +176,35 @@
         <div class="step-icon">📋</div>
         <div class="step-num">1</div>
         <div class="step-title">Upload your menu</div>
-        <div class="step-body">Send us your menu as a PDF, image, or plain text. We train your agent on it in minutes.</div>
+        <div class="step-body">Send us your menu — PDF, image, or plain text. Agent is trained in minutes.</div>
       </div>
       <div class="step-card">
         <div class="step-icon">📞</div>
         <div class="step-num">2</div>
         <div class="step-title">Forward your calls</div>
-        <div class="step-body">Set your restaurant line to forward unanswered calls to your OrderTaker number — one call to your carrier.</div>
+        <div class="step-body">Forward unanswered calls to your OrderTaker number. One call to your carrier.</div>
       </div>
       <div class="step-card">
         <div class="step-icon">🤖</div>
         <div class="step-num">3</div>
-        <div class="step-title">Your agent answers 24/7</div>
-        <div class="step-body">Every call is answered, every order is taken. Orders appear in your dashboard instantly.</div>
+        <div class="step-title">Agent answers 24/7</div>
+        <div class="step-body">Every call answered, every order taken. Orders appear in your dashboard instantly.</div>
       </div>
       <div class="step-card">
         <div class="step-icon">✅</div>
         <div class="step-num">4</div>
         <div class="step-title">You focus on cooking</div>
-        <div class="step-body">No missed calls, no busy signals, no "hold please." Your staff stays on the floor.</div>
+        <div class="step-body">No missed calls, no busy signals, no hold music. Your staff stays on the floor.</div>
       </div>
     </div>
   </div>
 
-  <!-- MENU UPLOAD CONCEPT -->
-  <div class="menu-section">
-    <h2>Your menu, loaded in minutes</h2>
-    <p>We accept any format. Once your menu is in, your agent knows every item, price, and modifier by heart.</p>
-    <div class="upload-zone">
-      <div class="upload-icon">📄</div>
-      <p><strong>Drop your menu here</strong><br>or email it to <a href="mailto:support@niledreamsdigital.com" style="color:var(--accent);text-decoration:none">support@niledreamsdigital.com</a></p>
-    </div>
-    <div class="format-pills">
-      <span class="pill">PDF</span>
-      <span class="pill">JPG / PNG</span>
-      <span class="pill">Google Doc link</span>
-      <span class="pill">Plain text</span>
-      <span class="pill">Toast export</span>
-      <span class="pill">Square export</span>
-    </div>
-    <div class="or-divider">or</div>
-    <div class="menu-note">Already have an account? Paste your menu directly in the <a href="dashboard.html">dashboard</a>.</div>
-  </div>
-
   <!-- CTA -->
   <div class="cta-section">
-    <h2>Ready to try with your real menu?</h2>
+    <h2>Ready to put your phone on autopilot?</h2>
     <p>7-day money-back guarantee. No setup fees. Cancel anytime.</p>
-    <div class="cta-actions">
-      <a href="signup.html" class="btn-primary">Get Started — Plans from $199/mo</a>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="signup.html" class="btn-primary">Get Started — from $199/mo</a>
       <a href="index.html#pricing" class="btn-secondary">See Pricing</a>
     </div>
   </div>
@@ -288,166 +216,11 @@
   <span>AI Phone Agent for Restaurants</span>
 </footer>
 
-<script>
-const SCRIPTS = {
-  en: [
-    { role: 'agent', text: "Thank you for calling Mario's Kitchen! I'm your AI ordering assistant. What can I get for you today?" },
-    { role: 'caller', text: "Hi! I'd like a large pepperoni pizza and some Buffalo wings please." },
-    { role: 'agent', text: "Perfect! One large pepperoni pizza at $18, and for the wings — would you like 8pc or 12pc?" },
-    { role: 'caller', text: "12 pieces please." },
-    { role: 'agent', text: "Got it! 12pc Buffalo wings for $16. Anything else, or shall I go ahead and confirm your order?" },
-    { role: 'caller', text: "That's it, thanks." },
-    { role: 'agent', text: "Great! Can I get your name for the order?" },
-    { role: 'caller', text: "It's James." },
-    { role: 'confirm', name: 'James', items: [['Large Pepperoni Pizza', '$18.00'], ['Wings 12pc (Buffalo)', '$16.00']], total: '$34.00', eta: '18–22 min' }
-  ],
-  es: [
-    { role: 'agent', text: "¡Gracias por llamar a Mario's Kitchen! Soy tu asistente de pedidos con IA. ¿En qué te puedo ayudar hoy?" },
-    { role: 'caller', text: "Hola, quiero pedir una pizza grande de pepperoni y alitas de búfalo." },
-    { role: 'agent', text: "¡Perfecto! Una pizza grande de pepperoni a $18. Para las alitas, ¿prefieres 8 o 12 piezas?" },
-    { role: 'caller', text: "12 piezas, por favor." },
-    { role: 'agent', text: "¡Excelente! 12 piezas de alitas Buffalo a $16. ¿Algo más o confirmamos el pedido?" },
-    { role: 'caller', text: "Eso es todo, gracias." },
-    { role: 'agent', text: "¡Perfecto! ¿Me puedes dar tu nombre para el pedido?" },
-    { role: 'caller', text: "Soy María." },
-    { role: 'confirm', name: 'María', items: [['Pizza Grande Pepperoni', '$18.00'], ['Alitas 12pz (Buffalo)', '$16.00']], total: '$34.00', eta: '18–22 min' }
-  ],
-  ar: [
-    { role: 'agent', text: "شكراً لاتصالك بـ Mario's Kitchen! أنا مساعد الطلبات الذكي. كيف يمكنني مساعدتك اليوم؟" },
-    { role: 'caller', text: "مرحباً، أريد طلب بيتزا بيبروني كبيرة وأجنحة دجاج بوفالو." },
-    { role: 'agent', text: "ممتاز! بيتزا بيبروني كبيرة بسعر $18. للأجنحة — هل تريد 8 أم 12 قطعة؟" },
-    { role: 'caller', text: "12 قطعة من فضلك." },
-    { role: 'agent', text: "رائع! 12 قطعة أجنحة بوفالو بسعر $16. هل تريد شيئاً آخر أم نؤكد الطلب؟" },
-    { role: 'caller', text: "هذا كل شيء، شكراً." },
-    { role: 'agent', text: "ممتاز! ما اسمك للطلب من فضلك؟" },
-    { role: 'caller', text: "أنا محمد." },
-    { role: 'confirm', name: 'محمد', items: [['بيتزا بيبروني كبيرة', '$18.00'], ['أجنحة 12 قطعة (بوفالو)', '$16.00']], total: '$34.00', eta: '18–22 min' }
-  ]
-};
-
-let currentLang = 'en';
-let isPlaying = false;
-let timerInterval = null;
-let elapsedSeconds = 0;
-
-function setLang(lang) {
-  currentLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('lang-' + lang).classList.add('active');
-  resetDemo();
-}
-
-function resetDemo() {
-  if (isPlaying) {
-    isPlaying = false;
-    clearInterval(timerInterval);
-  }
-  document.getElementById('phone-msgs').innerHTML = '';
-  document.getElementById('call-status').textContent = '● Ready to call';
-  document.getElementById('call-status').style.color = '#4ADE80';
-  document.getElementById('call-timer').textContent = '';
-  document.getElementById('start-btn').disabled = false;
-  document.getElementById('start-btn').textContent = '📞 Start Demo Call';
-  elapsedSeconds = 0;
-}
-
-function formatTimer(s) {
-  const m = Math.floor(s / 60).toString().padStart(2, '0');
-  const sec = (s % 60).toString().padStart(2, '0');
-  return m + ':' + sec;
-}
-
-function addBubble(role, text) {
-  const msgs = document.getElementById('phone-msgs');
-  if (role === 'agent') {
-    const el = document.createElement('div');
-    el.className = 'bubble agent';
-    el.innerHTML = '<div class="agent-label">🤖 AI AGENT</div>' + escapeHtml(text);
-    msgs.appendChild(el);
-  } else if (role === 'caller') {
-    const el = document.createElement('div');
-    el.className = 'bubble caller';
-    el.textContent = text;
-    msgs.appendChild(el);
-  } else if (role === 'confirm') {
-    const el = document.createElement('div');
-    el.className = 'bubble order-confirm';
-    el.innerHTML = `
-      <div class="order-confirm-title">✅ Order Confirmed — ${escapeHtml(text.name)}</div>
-      ${text.items.map(([name, price]) => `<div class="order-confirm-item"><span>${escapeHtml(name)}</span><span>${escapeHtml(price)}</span></div>`).join('')}
-      <div class="order-confirm-total"><span>Total</span><span>${escapeHtml(text.total)}</span></div>
-      <div style="margin-top:8px;font-size:11px;opacity:0.8">Ready in ${escapeHtml(text.eta)} · SMS confirmation sent</div>
-    `;
-    msgs.appendChild(el);
-  }
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function addTyping() {
-  const msgs = document.getElementById('phone-msgs');
-  const el = document.createElement('div');
-  el.className = 'typing-indicator';
-  el.id = 'typing';
-  el.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
-  msgs.appendChild(el);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function removeTyping() {
-  const el = document.getElementById('typing');
-  if (el) el.remove();
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function startDemo() {
-  if (isPlaying) return;
-  isPlaying = true;
-  document.getElementById('start-btn').disabled = true;
-  document.getElementById('start-btn').textContent = '📞 In Call…';
-  document.getElementById('call-status').textContent = '● On Call';
-  document.getElementById('call-status').style.color = '#FBBF24';
-
-  timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    document.getElementById('call-timer').textContent = formatTimer(elapsedSeconds);
-  }, 1000);
-
-  const script = SCRIPTS[currentLang];
-  for (const line of script) {
-    if (!isPlaying) break;
-    if (line.role === 'agent') {
-      addTyping();
-      await sleep(900 + line.text.length * 18);
-      removeTyping();
-      addBubble('agent', line.text);
-    } else if (line.role === 'caller') {
-      await sleep(700);
-      addBubble('caller', line.text);
-    } else if (line.role === 'confirm') {
-      await sleep(600);
-      addBubble('confirm', line);
-    }
-    await sleep(400);
-  }
-
-  clearInterval(timerInterval);
-  document.getElementById('call-status').textContent = '● Call ended';
-  document.getElementById('call-status').style.color = '#9A7575';
-  document.getElementById('start-btn').disabled = false;
-  document.getElementById('start-btn').textContent = '📞 Play Again';
-  isPlaying = false;
-}
-</script>
 <script src="ra-widget.js"></script>
 <script>
   initRa({
     accentColor: '#FF6B35',
-    systemPrompt: `You are Ra, an AI support assistant for OrderTaker by Nile Dreams Digital. OrderTaker is an AI phone agent for restaurants — it answers calls 24/7, takes orders, handles reservations, and sends SMS confirmations. Plans: Starter $199/mo 1,000 min, Pro $299/mo 2,000 min, Business $499/mo 3,500 min, Enterprise $799/mo 6,000 min. Overage: $0.20/min (Starter & Pro), $0.15/min (Business & Enterprise). Support: support@niledreamsdigital.com.`
+    systemPrompt: 'You are Ra, an AI support assistant for OrderTaker by Nile Dreams Digital. OrderTaker is an AI phone agent for restaurants — it answers calls 24/7, takes orders, handles reservations, and sends SMS confirmations. Plans: Starter $199/mo 1,000 min, Pro $299/mo 2,000 min, Business $499/mo 3,500 min, Enterprise $799/mo 6,000 min. Overage: $0.20/min (Starter & Pro), $0.15/min (Business & Enterprise). Support: support@niledreamsdigital.com.'
   });
 </script>
 </body>

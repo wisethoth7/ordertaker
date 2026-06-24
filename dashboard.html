@@ -137,6 +137,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
   <button class="dash-tab" onclick="switchTab('checklist')" id="tab-btn-checklist">✅ Setup Checklist</button>
   <button class="dash-tab" onclick="switchTab('kitchen')" id="tab-btn-kitchen">🍳 Kitchen View</button>
+  <button class="dash-tab" onclick="switchTab('menu')" id="tab-btn-menu">📋 Menu</button>
 </div>
 
 <div id="panel-orders">
@@ -487,6 +488,113 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     Demo data shown above — live orders from your customers will appear here automatically once your agent is active.
   </div>
 </div><!-- end panel-kitchen -->
+
+<!-- MENU PANEL -->
+<div id="panel-menu" style="display:none;padding:24px;max-width:760px;margin:0 auto">
+  <div style="font-size:18px;font-weight:800;margin-bottom:4px">Your Menu</div>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:24px">Upload a file or add items manually. Your AI agent learns the full menu instantly.</div>
+
+  <!-- UPLOAD ZONE -->
+  <div id="menu-drop-zone" style="border:2px dashed rgba(255,107,53,.3);border-radius:14px;padding:36px 24px;text-align:center;margin-bottom:20px;transition:border-color .2s;cursor:pointer"
+    ondragover="event.preventDefault();this.style.borderColor='#FF6B35'"
+    ondragleave="this.style.borderColor='rgba(255,107,53,.3)'"
+    ondrop="handleMenuDrop(event)">
+    <div style="font-size:32px;margin-bottom:10px">📄</div>
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Drag &amp; drop your menu here</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">PDF, CSV, JPG, or PNG accepted</div>
+    <input type="file" id="menu-file-input" accept=".pdf,.csv,.jpg,.jpeg,.png" style="display:none" onchange="handleMenuFile(this.files[0])">
+    <button onclick="document.getElementById('menu-file-input').click()" style="padding:10px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Upload Menu File</button>
+  </div>
+  <div id="menu-file-status" style="display:none;padding:12px 16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;margin-bottom:20px"></div>
+
+  <!-- MANUAL ENTRY -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:800;margin-bottom:14px">Restaurant Details</div>
+    <label style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px">BUSINESS NAME</label>
+    <input id="menu-biz-name" type="text" placeholder="e.g. Mario's Kitchen" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:0" onfocus="this.style.borderColor='#FF6B35'" onblur="this.style.borderColor='rgba(255,107,53,.15)'">
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:800;margin-bottom:6px">Add Item</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:5px">ITEM NAME</label>
+        <input id="menu-item-name" type="text" placeholder="e.g. Margherita Pizza" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none" onfocus="this.style.borderColor='#FF6B35'" onblur="this.style.borderColor='rgba(255,107,53,.15)'">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:5px">PRICE</label>
+        <input id="menu-item-price" type="number" step="0.01" placeholder="12.99" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none" onfocus="this.style.borderColor='#FF6B35'" onblur="this.style.borderColor='rgba(255,107,53,.15)'">
+      </div>
+    </div>
+    <input id="menu-item-desc" type="text" placeholder="Description (optional)" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px" onfocus="this.style.borderColor='#FF6B35'" onblur="this.style.borderColor='rgba(255,107,53,.15)'">
+    <button onclick="addMenuItem()" style="padding:9px 20px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">+ Add Item</button>
+  </div>
+
+  <!-- ITEM LIST -->
+  <div id="menu-item-list" style="margin-bottom:20px"></div>
+
+  <button onclick="saveMenuToDashboard()" style="width:100%;padding:13px;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer">Save Menu to AI Agent</button>
+  <div id="menu-save-confirm" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;text-align:center">✓ Menu saved — your AI agent is up to date.</div>
+</div><!-- end panel-menu -->
+<script>
+let menuItems = [];
+
+function handleMenuFile(file) {
+  if (!file) return;
+  const status = document.getElementById('menu-file-status');
+  status.textContent = '✓ ' + file.name + ' ready to upload (' + (file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+'MB' : Math.round(file.size/1024)+'KB') + ')';
+  status.style.display = 'block';
+  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(74,222,128,.4)';
+}
+
+function handleMenuDrop(e) {
+  e.preventDefault();
+  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const ok = /\.(pdf|csv|jpg|jpeg|png)$/i.test(file.name);
+  if (!ok) { alert('Please upload a PDF, CSV, JPG, or PNG file.'); return; }
+  handleMenuFile(file);
+}
+
+function addMenuItem() {
+  const name = document.getElementById('menu-item-name').value.trim();
+  const price = parseFloat(document.getElementById('menu-item-price').value);
+  const desc = document.getElementById('menu-item-desc').value.trim();
+  if (!name || isNaN(price)) return;
+  menuItems.push({ name, price, desc });
+  document.getElementById('menu-item-name').value = '';
+  document.getElementById('menu-item-price').value = '';
+  document.getElementById('menu-item-desc').value = '';
+  renderMenuItems();
+}
+
+function removeMenuItem(i) {
+  menuItems.splice(i, 1);
+  renderMenuItems();
+}
+
+function renderMenuItems() {
+  const el = document.getElementById('menu-item-list');
+  if (!menuItems.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">' +
+    menuItems.map((item, i) =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,107,53,.07)">' +
+        '<div><div style="font-size:13px;font-weight:700">' + item.name + '</div>' +
+        (item.desc ? '<div style="font-size:11px;color:var(--text2)">' + item.desc + '</div>' : '') +
+        '</div><div style="display:flex;align-items:center;gap:14px">' +
+        '<span style="font-size:13px;font-weight:800;color:var(--accent)">$' + item.price.toFixed(2) + '</span>' +
+        '<button onclick="removeMenuItem(' + i + ')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1">✕</button>' +
+        '</div></div>'
+    ).join('') + '</div>';
+}
+
+function saveMenuToDashboard() {
+  const confirm = document.getElementById('menu-save-confirm');
+  confirm.style.display = 'block';
+  setTimeout(() => { confirm.style.display = 'none'; }, 4000);
+}
+</script>
 
 <!-- ONBOARDING WALKTHROUGH MODAL -->
 <div id="onboardingOverlay">
@@ -906,6 +1014,7 @@ function switchTab(tab) {
   document.getElementById('panel-calls').style.display = tab === 'calls' ? 'block' : 'none';
   document.getElementById('panel-checklist').style.display = tab === 'checklist' ? 'block' : 'none';
   document.getElementById('panel-kitchen').style.display = tab === 'kitchen' ? 'block' : 'none';
+  document.getElementById('panel-menu').style.display = tab === 'menu' ? 'block' : 'none';
   document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.id === 'tab-btn-' + tab));
   if (tab === 'billing') loadBillingData();
   if (tab === 'calls') loadCallLogs();
@@ -917,7 +1026,7 @@ const CHECKLIST_STEPS = [
   {
     id: 'menu', icon: '📋', title: 'Upload Your Menu',
     body: 'Add your items — prices, descriptions, and allergens. The AI learns your full menu instantly.',
-    cta: `<a href="menu-upload.html" style="display:inline-block;padding:9px 18px;background:var(--accent);color:#1a0a00;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;margin-top:10px">Open Menu Upload →</a>`
+    cta: `<button onclick="switchTab('menu')" style="padding:9px 18px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;margin-top:10px">Open Menu →</button>`
   },
   {
     id: 'staff', icon: '📱', title: 'Add Staff Alert Numbers',
@@ -1058,7 +1167,7 @@ const OB_STEPS = [
     icon: '📋',
     title: 'Upload Your Menu',
     body: 'Go to Menu Upload and add your items — prices, descriptions, and allergens. The AI learns your full menu instantly.',
-    action: `<a href="menu-upload.html" style="display:block;text-align:center;padding:11px;background:var(--accent);color:#1a0a00;border-radius:9px;font-weight:800;text-decoration:none;margin-top:12px">Open Menu Upload →</a>`,
+    action: `<button onclick="closeOnboarding();switchTab('menu')" style="display:block;width:100%;text-align:center;padding:11px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-weight:800;cursor:pointer;margin-top:12px">Open Menu →</button>`,
   },
   {
     icon: '📱',
