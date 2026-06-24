@@ -571,31 +571,87 @@
     <!-- DEMO VISUAL -->
     <div style="max-width:720px;margin:56px auto 0">
       <div class="section-label" style="text-align:center;margin-bottom:20px">SEE IT IN ACTION</div>
-      <div style="width:100%;border-radius:16px;border:1px solid var(--border);background:var(--surface);padding:40px 24px;text-align:center">
-        <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin-bottom:36px">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
-            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px">📞</div>
-            <span style="font-size:11px;color:var(--text2);font-weight:700">Call Rings</span>
-          </div>
-          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
-            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 20px rgba(255,107,53,0.2)">🤖</div>
-            <span style="font-size:11px;color:var(--accent);font-weight:700">AI Answers</span>
-          </div>
-          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
-            <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,107,53,0.15);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px">🍕</div>
-            <span style="font-size:11px;color:var(--text2);font-weight:700">Full Order Taken</span>
-          </div>
-          <div style="width:40px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin-bottom:20px"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px">
-            <div style="width:56px;height:56px;border-radius:14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;font-size:24px">✅</div>
-            <span style="font-size:11px;color:var(--green);font-weight:700">SMS Sent</span>
+      <div class="otd">
+        <style>
+        .otd{--ot-orange:#FF6B35;--ot-ink:#FFF5F5;--ot-line:rgba(255,107,53,.18);--ot-card:#1A0707;--ot-sub:#9A7575;
+          display:flex;gap:18px;flex-wrap:wrap;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
+        .otd *{box-sizing:border-box}
+        .otd .panel{flex:1;min-width:260px;background:var(--ot-card);border:1px solid var(--ot-line);
+          border-radius:18px;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,.4)}
+        .otd .call{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+        .otd .avatar{width:46px;height:46px;border-radius:50%;background:var(--ot-orange);color:#1a0000;
+          display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+        .otd .who{font-weight:800;color:var(--ot-ink);font-size:15px}
+        .otd .status{font-size:12px;color:var(--ot-orange);font-weight:700}
+        .otd .eq{display:flex;align-items:flex-end;gap:4px;height:44px;margin:6px 0 14px}
+        .otd .eq i{width:6px;background:var(--ot-orange);border-radius:3px;height:100%;
+          transform-origin:bottom;opacity:.85;font-style:normal}
+        .otd .eq i:nth-child(1){animation:otb .60s infinite ease-in-out}
+        .otd .eq i:nth-child(2){animation:otb .50s infinite ease-in-out}
+        .otd .eq i:nth-child(3){animation:otb .70s infinite ease-in-out}
+        .otd .eq i:nth-child(4){animation:otb .45s infinite ease-in-out}
+        .otd .eq i:nth-child(5){animation:otb .65s infinite ease-in-out}
+        .otd .eq i:nth-child(6){animation:otb .55s infinite ease-in-out}
+        @keyframes otb{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+        .otd .caps{position:relative;height:52px}
+        .otd .caps span{position:absolute;inset:0;font-size:14px;color:var(--ot-ink);opacity:0;line-height:1.35}
+        .otd .caps span:nth-child(1){animation:c1 12s infinite}
+        .otd .caps span:nth-child(2){animation:c2 12s infinite}
+        .otd .caps span:nth-child(3){animation:c3 12s infinite}
+        .otd .caps span:nth-child(4){animation:c4 12s infinite}
+        .otd .caps span:nth-child(5){animation:c5 12s infinite}
+        @keyframes c1{0%,6%{opacity:0}9%,22%{opacity:1}25%,100%{opacity:0}}
+        @keyframes c2{0%,24%{opacity:0}27%,40%{opacity:1}43%,100%{opacity:0}}
+        @keyframes c3{0%,42%{opacity:0}45%,58%{opacity:1}61%,100%{opacity:0}}
+        @keyframes c4{0%,60%{opacity:0}63%,76%{opacity:1}79%,100%{opacity:0}}
+        @keyframes c5{0%,78%{opacity:0}81%,96%{opacity:1}99%,100%{opacity:0}}
+        .otd .tkh{display:flex;justify-content:space-between;align-items:center;
+          border-bottom:2px dashed var(--ot-line);padding-bottom:10px;margin-bottom:6px}
+        .otd .tkh b{font-size:15px;color:var(--ot-ink)}
+        .otd .tkh span{font-size:12px;color:var(--ot-sub)}
+        .otd ul.tk{list-style:none;margin:0;padding:0}
+        .otd ul.tk li{display:flex;justify-content:space-between;font-size:14px;color:var(--ot-ink);
+          padding:7px 0;opacity:0;border-bottom:1px solid rgba(255,107,53,.07)}
+        .otd ul.tk li:last-child{border-bottom:none}
+        .otd ul.tk li:nth-child(1){animation:it1 12s infinite}
+        .otd ul.tk li:nth-child(2){animation:it2 12s infinite}
+        .otd ul.tk li:nth-child(3){animation:it3 12s infinite}
+        .otd ul.tk li:nth-child(4){animation:it4 12s infinite}
+        @keyframes it1{0%,9%{opacity:0;transform:translateY(6px)}13%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it2{0%,27%{opacity:0;transform:translateY(6px)}31%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it3{0%,45%{opacity:0;transform:translateY(6px)}49%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it4{0%,63%{opacity:0;transform:translateY(6px)}67%,96%{opacity:1;transform:none}100%{opacity:0}}
+        .otd .sent{margin-top:12px;text-align:center;font-weight:800;color:#4ADE80;font-size:14px;
+          opacity:0;animation:snt 12s infinite}
+        @keyframes snt{0%,80%{opacity:0;transform:scale(.9)}84%,97%{opacity:1;transform:scale(1)}100%{opacity:0}}
+        @media(max-width:560px){.otd{flex-direction:column}}
+        </style>
+        <div class="panel">
+          <div class="call"><div class="avatar">&#9742;</div>
+            <div><div class="who">Mario's Kitchen</div><div class="status">&#9679; Ra is on the call</div></div></div>
+          <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="caps">
+            <span>"Thanks for calling Mario's Kitchen! What can I get you?"</span>
+            <span>"One large pepperoni pizza &mdash; got it."</span>
+            <span>"Twelve buffalo wings and a cheesesteak&hellip;"</span>
+            <span>"&hellip;and a cheeseburger. Anything else?"</span>
+            <span>"Perfect &mdash; sending it to the kitchen now! &#127829;"</span>
           </div>
         </div>
-        <p style="color:var(--text2);font-size:14px;margin-bottom:24px;line-height:1.6">The entire call — from ring to SMS confirmation — takes under 3 minutes and requires zero staff involvement.</p>
+        <div class="panel">
+          <div class="tkh"><b>Order #1042</b><span>James Carter</span></div>
+          <ul class="tk">
+            <li><span>1&times; Large Pepperoni Pizza</span><span>$16.00</span></li>
+            <li><span>12&times; Buffalo Wings</span><span>$11.50</span></li>
+            <li><span>1&times; Cheesesteak</span><span>$10.00</span></li>
+            <li><span>1&times; Cheeseburger</span><span>$8.50</span></li>
+          </ul>
+          <div class="sent">&#10003; Sent to kitchen</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:32px">
         <a href="demo.html" class="btn-primary" style="display:inline-block;font-size:15px;padding:14px 32px;text-decoration:none">🎙 Try the Interactive Demo →</a>
-        <p style="margin-top:14px;font-size:12px;color:var(--text2)">Works in English, Spanish & Arabic · No signup needed</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--text2)">Works in English, Spanish &amp; Arabic · No signup needed</p>
       </div>
     </div>
   </div>
