@@ -492,30 +492,30 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 <!-- MENU PANEL -->
 <div id="panel-menu" style="display:none;padding:24px;max-width:760px;margin:0 auto">
   <div style="font-size:18px;font-weight:800;margin-bottom:4px">Your Menu</div>
-  <div style="font-size:13px;color:var(--text2);margin-bottom:24px">Upload a file or add items manually. Your AI agent learns the full menu instantly.</div>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Upload a file and your AI agent learns every item instantly. Or add items manually below.</div>
+
+  <!-- STATUS BANNER -->
+  <div id="menu-status" style="display:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:20px"></div>
 
   <!-- UPLOAD ZONE -->
-  <div id="menu-drop-zone" style="border:2px dashed rgba(255,107,53,.3);border-radius:14px;padding:36px 24px;text-align:center;margin-bottom:20px;transition:border-color .2s;cursor:pointer"
+  <div id="menu-drop-zone"
+    style="border:2px dashed rgba(255,107,53,.3);border-radius:14px;padding:36px 24px;text-align:center;margin-bottom:20px;transition:border-color .2s"
     ondragover="event.preventDefault();this.style.borderColor='#FF6B35'"
     ondragleave="this.style.borderColor='rgba(255,107,53,.3)'"
     ondrop="handleMenuDrop(event)">
     <div style="font-size:32px;margin-bottom:10px">📄</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Drag &amp; drop your menu here</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">PDF, CSV, JPG, or PNG accepted</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">PDF, CSV, JPG, or PNG</div>
     <input type="file" id="menu-file-input" accept=".pdf,.csv,.jpg,.jpeg,.png" style="display:none" onchange="handleMenuFile(this.files[0])">
-    <button onclick="document.getElementById('menu-file-input').click()" style="padding:10px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Upload Menu File</button>
+    <button id="menu-upload-btn" onclick="document.getElementById('menu-file-input').click()" style="padding:10px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Upload Menu File</button>
   </div>
-  <div id="menu-file-status" style="display:none;padding:12px 16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;margin-bottom:20px"></div>
+
+  <!-- SAVED ITEMS (from DB) -->
+  <div id="menu-item-list" style="margin-bottom:24px"></div>
 
   <!-- MANUAL ENTRY -->
   <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
-    <div style="font-size:13px;font-weight:800;margin-bottom:14px">Restaurant Details</div>
-    <label style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px">BUSINESS NAME</label>
-    <input id="menu-biz-name" type="text" placeholder="e.g. Mario's Kitchen" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:0" onfocus="this.style.borderColor='#FF6B35'" onblur="this.style.borderColor='rgba(255,107,53,.15)'">
-  </div>
-
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
-    <div style="font-size:13px;font-weight:800;margin-bottom:6px">Add Item</div>
+    <div style="font-size:13px;font-weight:800;margin-bottom:6px">Add item manually</div>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:10px">
       <div>
         <label style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:5px">ITEM NAME</label>
@@ -530,69 +530,187 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <button onclick="addMenuItem()" style="padding:9px 20px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">+ Add Item</button>
   </div>
 
-  <!-- ITEM LIST -->
-  <div id="menu-item-list" style="margin-bottom:20px"></div>
-
-  <button onclick="saveMenuToDashboard()" style="width:100%;padding:13px;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer">Save Menu to AI Agent</button>
-  <div id="menu-save-confirm" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;text-align:center">✓ Menu saved — your AI agent is up to date.</div>
+  <!-- PENDING (unsaved manual items) -->
+  <div id="menu-pending-list" style="margin-bottom:16px"></div>
+  <button id="menu-save-btn" onclick="saveMenuItems()" style="display:none;width:100%;padding:13px;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer">Save Items to AI Agent</button>
 </div><!-- end panel-menu -->
 <script>
 let menuItems = [];
 
-function handleMenuFile(file) {
+// ── status banner ─────────────────────────────────────────────────────────────
+function setMenuStatus(msg, type) {
+  const el = document.getElementById('menu-status');
+  const s = {
+    loading: 'background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);color:var(--accent)',
+    success: 'background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--green)',
+    error:   'background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:#F87171',
+  };
+  el.setAttribute('style', 'display:block;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:20px;' + (s[type] || s.loading));
+  el.textContent = msg;
+}
+function clearMenuStatus() {
+  const el = document.getElementById('menu-status');
+  el.style.display = 'none';
+}
+
+// ── file upload + parse ───────────────────────────────────────────────────────
+async function handleMenuFile(file) {
   if (!file) return;
-  const status = document.getElementById('menu-file-status');
-  status.textContent = '✓ ' + file.name + ' ready to upload (' + (file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+'MB' : Math.round(file.size/1024)+'KB') + ')';
-  status.style.display = 'block';
-  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(74,222,128,.4)';
+  if (!RESTAURANT_ID) { setMenuStatus('No restaurant loaded — please refresh the page.', 'error'); return; }
+
+  // reset so the same file can be re-selected
+  document.getElementById('menu-file-input').value = '';
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf','csv','jpg','jpeg','png'].includes(ext)) {
+    setMenuStatus('Unsupported format — please upload a PDF, CSV, JPG, or PNG.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('menu-upload-btn');
+  btn.disabled = true;
+
+  // step 1: upload to storage
+  setMenuStatus('Uploading ' + file.name + '…', 'loading');
+  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.5)';
+
+  const filePath = RESTAURANT_ID + '/' + Date.now() + '_' + file.name;
+  const { error: uploadErr } = await sb.storage
+    .from('ot-menu-uploads')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadErr) {
+    setMenuStatus('Upload failed: ' + uploadErr.message, 'error');
+    document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
+    btn.disabled = false;
+    return;
+  }
+
+  // step 2: invoke parse function
+  setMenuStatus('Reading your menu…', 'loading');
+
+  const { data: fnData, error: fnErr } = await sb.functions.invoke('ordertaker-parse-menu', {
+    body: { restaurant_id: RESTAURANT_ID, file_path: filePath },
+  });
+
+  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
+  btn.disabled = false;
+
+  if (fnErr || fnData?.error) {
+    setMenuStatus('Could not read menu: ' + (fnData?.error || fnErr.message), 'error');
+    return;
+  }
+
+  if (fnData?.ok) {
+    const n = fnData.items_added ?? 0;
+    setMenuStatus('✓ ' + n + ' item' + (n !== 1 ? 's' : '') + ' added to your menu.', 'success');
+    await loadMenuItems();
+  }
 }
 
 function handleMenuDrop(e) {
   e.preventDefault();
   document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
   const file = e.dataTransfer.files[0];
-  if (!file) return;
-  const ok = /\.(pdf|csv|jpg|jpeg|png)$/i.test(file.name);
-  if (!ok) { alert('Please upload a PDF, CSV, JPG, or PNG file.'); return; }
-  handleMenuFile(file);
+  if (file) handleMenuFile(file);
 }
 
+// ── load + render saved items from DB ─────────────────────────────────────────
+async function loadMenuItems() {
+  if (!RESTAURANT_ID) return;
+  const { data, error } = await sb
+    .from('ot_menu_items')
+    .select('id,name,price,description,category,available')
+    .eq('restaurant_id', RESTAURANT_ID)
+    .order('category').order('name');
+  if (!error) renderDbItems(data || []);
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderDbItems(items) {
+  const el = document.getElementById('menu-item-list');
+  if (!items.length) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:4px">No items yet — upload a file or add manually below.</div>';
+    return;
+  }
+  el.innerHTML =
+    '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);margin-bottom:8px">' + items.length + ' ITEMS IN YOUR MENU</div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">' +
+    items.map(item =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,107,53,.07)">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:700">' + escHtml(item.name) + '</div>' +
+          (item.description ? '<div style="font-size:11px;color:var(--text2)">' + escHtml(item.description) + '</div>' : '') +
+          (item.category ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--accent);margin-top:2px">' + escHtml(item.category) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<span style="font-size:13px;font-weight:800;color:var(--accent)">$' + Number(item.price).toFixed(2) + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:' + (item.available !== false ? 'var(--green)' : 'var(--red)') + '">' + (item.available !== false ? 'On' : 'Off') + '</span>' +
+        '</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+}
+
+// ── manual entry ──────────────────────────────────────────────────────────────
 function addMenuItem() {
-  const name = document.getElementById('menu-item-name').value.trim();
+  const name  = document.getElementById('menu-item-name').value.trim();
   const price = parseFloat(document.getElementById('menu-item-price').value);
-  const desc = document.getElementById('menu-item-desc').value.trim();
+  const desc  = document.getElementById('menu-item-desc').value.trim();
   if (!name || isNaN(price)) return;
   menuItems.push({ name, price, desc });
-  document.getElementById('menu-item-name').value = '';
+  document.getElementById('menu-item-name').value  = '';
   document.getElementById('menu-item-price').value = '';
-  document.getElementById('menu-item-desc').value = '';
-  renderMenuItems();
+  document.getElementById('menu-item-desc').value  = '';
+  renderPendingItems();
 }
 
-function removeMenuItem(i) {
+function removePendingItem(i) {
   menuItems.splice(i, 1);
-  renderMenuItems();
+  renderPendingItems();
 }
 
-function renderMenuItems() {
-  const el = document.getElementById('menu-item-list');
-  if (!menuItems.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">' +
+function renderPendingItems() {
+  const el = document.getElementById('menu-pending-list');
+  const btn = document.getElementById('menu-save-btn');
+  if (!menuItems.length) { el.innerHTML = ''; btn.style.display = 'none'; return; }
+  btn.style.display = 'block';
+  el.innerHTML =
+    '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);margin-bottom:8px">PENDING — NOT SAVED YET</div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:4px">' +
     menuItems.map((item, i) =>
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,107,53,.07)">' +
-        '<div><div style="font-size:13px;font-weight:700">' + item.name + '</div>' +
-        (item.desc ? '<div style="font-size:11px;color:var(--text2)">' + item.desc + '</div>' : '') +
-        '</div><div style="display:flex;align-items:center;gap:14px">' +
+        '<div><div style="font-size:13px;font-weight:700">' + escHtml(item.name) + '</div>' +
+        (item.desc ? '<div style="font-size:11px;color:var(--text2)">' + escHtml(item.desc) + '</div>' : '') +
+        '</div><div style="display:flex;align-items:center;gap:12px">' +
         '<span style="font-size:13px;font-weight:800;color:var(--accent)">$' + item.price.toFixed(2) + '</span>' +
-        '<button onclick="removeMenuItem(' + i + ')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1">✕</button>' +
+        '<button onclick="removePendingItem(' + i + ')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1">✕</button>' +
         '</div></div>'
     ).join('') + '</div>';
 }
 
-function saveMenuToDashboard() {
-  const confirm = document.getElementById('menu-save-confirm');
-  confirm.style.display = 'block';
-  setTimeout(() => { confirm.style.display = 'none'; }, 4000);
+async function saveMenuItems() {
+  if (!menuItems.length || !RESTAURANT_ID) return;
+  const btn = document.getElementById('menu-save-btn');
+  btn.disabled = true;
+  const rows = menuItems.map(item => ({
+    restaurant_id: RESTAURANT_ID,
+    name: item.name,
+    price: item.price,
+    description: item.desc || null,
+    available: true,
+  }));
+  const { error } = await sb.from('ot_menu_items').insert(rows);
+  btn.disabled = false;
+  if (error) { setMenuStatus('Save failed: ' + error.message, 'error'); return; }
+  const n = rows.length;
+  menuItems = [];
+  renderPendingItems();
+  setMenuStatus('✓ ' + n + ' item' + (n !== 1 ? 's' : '') + ' saved to your menu.', 'success');
+  await loadMenuItems();
 }
 </script>
 
@@ -1019,6 +1137,7 @@ function switchTab(tab) {
   if (tab === 'billing') loadBillingData();
   if (tab === 'calls') loadCallLogs();
   if (tab === 'checklist') renderChecklist();
+  if (tab === 'menu') loadMenuItems();
 }
 
 // ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
