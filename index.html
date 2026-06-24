@@ -556,10 +556,10 @@
     <!-- DEMO VISUAL -->
     <div style="max-width:720px;margin:56px auto 0">
       <div class="section-label" style="text-align:center;margin-bottom:20px">SEE IT IN ACTION</div>
-      <div class="otd">
+      <div class="otd run" id="otDemo">
         <style>
         .otd{--ot-orange:#FF6B35;--ot-ink:#FFF5F5;--ot-line:rgba(255,107,53,.18);--ot-card:#1A0707;--ot-sub:#9A7575;
-          display:flex;gap:18px;flex-wrap:wrap;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
+          position:relative;display:flex;gap:18px;flex-wrap:wrap;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
         .otd *{box-sizing:border-box}
         .otd .panel{flex:1;min-width:260px;background:var(--ot-card);border:1px solid var(--ot-line);
           border-radius:18px;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,.4)}
@@ -571,25 +571,27 @@
         .otd .eq{display:flex;align-items:flex-end;gap:4px;height:44px;margin:6px 0 14px}
         .otd .eq i{width:6px;background:var(--ot-orange);border-radius:3px;height:100%;
           transform-origin:bottom;opacity:.85;font-style:normal}
-        .otd .eq i:nth-child(1){animation:otb .60s infinite ease-in-out}
-        .otd .eq i:nth-child(2){animation:otb .50s infinite ease-in-out}
-        .otd .eq i:nth-child(3){animation:otb .70s infinite ease-in-out}
-        .otd .eq i:nth-child(4){animation:otb .45s infinite ease-in-out}
-        .otd .eq i:nth-child(5){animation:otb .65s infinite ease-in-out}
-        .otd .eq i:nth-child(6){animation:otb .55s infinite ease-in-out}
+        .otd.run .eq i:nth-child(1){animation:otb .60s infinite ease-in-out}
+        .otd.run .eq i:nth-child(2){animation:otb .50s infinite ease-in-out}
+        .otd.run .eq i:nth-child(3){animation:otb .70s infinite ease-in-out}
+        .otd.run .eq i:nth-child(4){animation:otb .45s infinite ease-in-out}
+        .otd.run .eq i:nth-child(5){animation:otb .65s infinite ease-in-out}
+        .otd.run .eq i:nth-child(6){animation:otb .55s infinite ease-in-out}
         @keyframes otb{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
-        .otd .caps{position:relative;height:52px}
+        .otd .caps{position:relative;height:54px}
         .otd .caps span{position:absolute;inset:0;font-size:14px;color:var(--ot-ink);opacity:0;line-height:1.35}
-        .otd .caps span:nth-child(1){animation:c1 12s infinite}
-        .otd .caps span:nth-child(2){animation:c2 12s infinite}
-        .otd .caps span:nth-child(3){animation:c3 12s infinite}
-        .otd .caps span:nth-child(4){animation:c4 12s infinite}
-        .otd .caps span:nth-child(5){animation:c5 12s infinite}
-        @keyframes c1{0%,6%{opacity:0}9%,22%{opacity:1}25%,100%{opacity:0}}
-        @keyframes c2{0%,24%{opacity:0}27%,40%{opacity:1}43%,100%{opacity:0}}
-        @keyframes c3{0%,42%{opacity:0}45%,58%{opacity:1}61%,100%{opacity:0}}
-        @keyframes c4{0%,60%{opacity:0}63%,76%{opacity:1}79%,100%{opacity:0}}
-        @keyframes c5{0%,78%{opacity:0}81%,96%{opacity:1}99%,100%{opacity:0}}
+        .otd.run .caps span:nth-child(1){animation:c1 12s infinite}
+        .otd.run .caps span:nth-child(2){animation:c2 12s infinite}
+        .otd.run .caps span:nth-child(3){animation:c3 12s infinite}
+        .otd.run .caps span:nth-child(4){animation:c4 12s infinite}
+        .otd.run .caps span:nth-child(5){animation:c5 12s infinite;color:var(--ot-orange);font-weight:700}
+        .otd.run .caps span:nth-child(6){animation:c6 12s infinite}
+        @keyframes c1{0%,7%{opacity:0}10%,25%{opacity:1}28%,100%{opacity:0}}
+        @keyframes c2{0%,27%{opacity:0}30%,38%{opacity:1}41%,100%{opacity:0}}
+        @keyframes c3{0%,39%{opacity:0}42%,52%{opacity:1}55%,100%{opacity:0}}
+        @keyframes c4{0%,53%{opacity:0}56%,64%{opacity:1}67%,100%{opacity:0}}
+        @keyframes c5{0%,65%{opacity:0}68%,80%{opacity:1}83%,100%{opacity:0}}
+        @keyframes c6{0%,82%{opacity:0}85%,97%{opacity:1}99%,100%{opacity:0}}
         .otd .tkh{display:flex;justify-content:space-between;align-items:center;
           border-bottom:2px dashed var(--ot-line);padding-bottom:10px;margin-bottom:6px}
         .otd .tkh b{font-size:15px;color:var(--ot-ink)}
@@ -598,19 +600,29 @@
         .otd ul.tk li{display:flex;justify-content:space-between;font-size:14px;color:var(--ot-ink);
           padding:7px 0;opacity:0;border-bottom:1px solid rgba(255,107,53,.07)}
         .otd ul.tk li:last-child{border-bottom:none}
-        .otd ul.tk li:nth-child(1){animation:it1 12s infinite}
-        .otd ul.tk li:nth-child(2){animation:it2 12s infinite}
-        .otd ul.tk li:nth-child(3){animation:it3 12s infinite}
-        .otd ul.tk li:nth-child(4){animation:it4 12s infinite}
-        @keyframes it1{0%,9%{opacity:0;transform:translateY(6px)}13%,96%{opacity:1;transform:none}100%{opacity:0}}
-        @keyframes it2{0%,27%{opacity:0;transform:translateY(6px)}31%,96%{opacity:1;transform:none}100%{opacity:0}}
-        @keyframes it3{0%,45%{opacity:0;transform:translateY(6px)}49%,96%{opacity:1;transform:none}100%{opacity:0}}
-        @keyframes it4{0%,63%{opacity:0;transform:translateY(6px)}67%,96%{opacity:1;transform:none}100%{opacity:0}}
-        .otd .sent{margin-top:12px;text-align:center;font-weight:800;color:#4ADE80;font-size:14px;
-          opacity:0;animation:snt 12s infinite}
-        @keyframes snt{0%,80%{opacity:0;transform:scale(.9)}84%,97%{opacity:1;transform:scale(1)}100%{opacity:0}}
+        .otd ul.tk li.up{background:rgba(255,107,53,.1);border-radius:8px;padding:7px 8px;font-weight:700;border-bottom:none}
+        .otd ul.tk li.up small{background:var(--ot-orange);color:#1a0000;font-size:9px;font-weight:800;
+          padding:2px 6px;border-radius:6px;margin-left:6px;letter-spacing:.04em;vertical-align:middle}
+        .otd.run ul.tk li:nth-child(1){animation:it1 12s infinite}
+        .otd.run ul.tk li:nth-child(2){animation:it2 12s infinite}
+        .otd.run ul.tk li:nth-child(3){animation:it3 12s infinite}
+        .otd.run ul.tk li:nth-child(4){animation:it4 12s infinite}
+        .otd.run ul.tk li:nth-child(5){animation:it5 12s infinite}
+        @keyframes it1{0%,13%{opacity:0;transform:translateY(6px)}17%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it2{0%,29%{opacity:0;transform:translateY(6px)}33%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it3{0%,39%{opacity:0;transform:translateY(6px)}43%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it4{0%,53%{opacity:0;transform:translateY(6px)}57%,96%{opacity:1;transform:none}100%{opacity:0}}
+        @keyframes it5{0%,67%{opacity:0;transform:translateY(6px) scale(.96)}72%,96%{opacity:1;transform:none}100%{opacity:0}}
+        .otd .sent{margin-top:12px;text-align:center;font-weight:800;color:#4ADE80;font-size:14px;opacity:0}
+        .otd.run .sent{animation:snt 12s infinite}
+        @keyframes snt{0%,83%{opacity:0;transform:scale(.9)}87%,97%{opacity:1;transform:scale(1)}100%{opacity:0}}
+        .otd .snd{position:absolute;top:-14px;right:0;background:rgba(255,107,53,.12);color:var(--ot-orange);
+          border:1px solid rgba(255,107,53,.3);font-size:11px;font-weight:700;padding:6px 12px;
+          border-radius:999px;cursor:pointer;opacity:.85}
+        .otd .snd:hover{opacity:1}
         @media(max-width:560px){.otd{flex-direction:column}}
         </style>
+        <button class="snd" id="otSnd" type="button">&#128266; Play with sound</button>
         <div class="panel">
           <div class="call"><div class="avatar">&#9742;</div>
             <div><div class="who">Mario's Kitchen</div><div class="status">&#9679; Ra is on the call</div></div></div>
@@ -620,7 +632,8 @@
             <span>"One large pepperoni pizza &mdash; got it."</span>
             <span>"Twelve buffalo wings and a cheesesteak&hellip;"</span>
             <span>"&hellip;and a cheeseburger. Anything else?"</span>
-            <span>"Perfect &mdash; sending it to the kitchen now! &#127829;"</span>
+            <span>"Want fries &amp; a drink to make it a combo? Just $4 more."</span>
+            <span>"Perfect &mdash; sending it to the kitchen! &#127829;"</span>
           </div>
         </div>
         <div class="panel">
@@ -630,10 +643,28 @@
             <li><span>12&times; Buffalo Wings</span><span>$11.50</span></li>
             <li><span>1&times; Cheesesteak</span><span>$10.00</span></li>
             <li><span>1&times; Cheeseburger</span><span>$8.50</span></li>
+            <li class="up"><span>+ Combo: Fries &amp; Drink <small>UPSELL</small></span><span>+$4.00</span></li>
           </ul>
           <div class="sent">&#10003; Sent to kitchen</div>
         </div>
       </div>
+      <script>
+      (function(){
+        var box=document.getElementById('otDemo'), btn=document.getElementById('otSnd');
+        var ctx, timer, on=false;
+        var marks=[ [1.9,660,.10],[3.8,720,.10],[4.9,720,.10],[6.7,720,.10],[8.5,880,.13],[10.2,990,.16] ];
+        function ding(t,f,g){ if(!ctx)return; var o=ctx.createOscillator(),a=ctx.createGain();
+          o.type='triangle'; o.frequency.value=f; o.connect(a); a.connect(ctx.destination);
+          a.gain.setValueAtTime(0,t); a.gain.linearRampToValueAtTime(g,t+0.02);
+          a.gain.exponentialRampToValueAtTime(0.0001,t+0.28); o.start(t); o.stop(t+0.3); }
+        function restart(){ box.classList.remove('run'); void box.offsetWidth; box.classList.add('run'); }
+        function cycle(){ var base=ctx.currentTime+0.05; marks.forEach(function(m){ ding(base+m[0],m[1],m[2]); }); }
+        btn.addEventListener('click',function(){
+          if(!on){ ctx=ctx||new (window.AudioContext||window.webkitAudioContext)(); ctx.resume();
+            on=true; btn.textContent='🔇 Mute'; restart(); cycle(); timer=setInterval(cycle,12000);
+          } else { on=false; btn.textContent='🔊 Play with sound'; clearInterval(timer); } });
+      })();
+      </script>
       <div style="text-align:center;margin-top:32px">
         <a href="demo.html" class="btn-primary" style="display:inline-block;font-size:15px;padding:14px 32px;text-decoration:none">Watch the Demo →</a>
       </div>
