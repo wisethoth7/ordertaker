@@ -247,9 +247,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month', enterprise: 'Contact Us' };
 const STRIPE_LINKS = {
-  starter: 'mailto:thothwisdom7@gmail.com?subject=OrderTaker+Starter+Plan+%E2%80%94+Ready+to+Pay',
-  pro: 'https://buy.stripe.com/bJefZaa209bLa4V9cv18c00',
-  business: 'mailto:thothwisdom7@gmail.com?subject=OrderTaker+Business+Plan+%E2%80%94+Ready+to+Pay',
+  starter: 'https://buy.stripe.com/00wcMY5LK9bLcd39cv18c05',
+  pro: 'https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01',
+  business: 'https://buy.stripe.com/5kQ28kdec2Nn3Gx2O718c06',
 };
 
 function selectPlan(el) {
@@ -265,7 +265,7 @@ function selectPlan(el) {
   if (plan === 'enterprise') {
     btn.textContent = 'Contact Us for Enterprise →';
     btn.type = 'button';
-    btn.onclick = function() { window.location.href = 'mailto:thothwisdom7@gmail.com?subject=OrderTaker Enterprise Plan'; };
+    btn.onclick = function() { window.open('https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07','_blank'); };
   } else {
     btn.textContent = 'Get Started — ' + PLAN_LABELS[plan] + ' — 7-Day Money-Back';
     btn.type = 'submit';
@@ -287,7 +287,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   const form = e.target;
   const plan = form.selectedPlan.value || 'pro';
   if (plan === 'enterprise') {
-    window.location.href = 'mailto:thothwisdom7@gmail.com?subject=OrderTaker Enterprise Plan';
+    window.open('https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07','_blank');
     return;
   }
   const submitBtn = form.querySelector('button[type="submit"]');
@@ -347,7 +347,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
 <script>
 initRa({
   accentColor: '#FF6B35',
-  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help prospective customers with: choosing the right plan (Starter $199, Pro $299, Business $499, Enterprise $799), understanding what is included, the signup process, and what happens after they sign up. For billing questions, direct to thothwisdom7@gmail.com.'
+  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help prospective customers with: choosing the right plan (Starter $199, Pro $299, Business $499, Enterprise $799), understanding what is included, the signup process, and what happens after they sign up. For billing questions, direct to support@niledreamsdigital.com.'
 });
 </script>
 </body>

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /dashboard.html
 
-Sitemap: https://wisethoth7.github.io/ordertaker/sitemap.xml
+Sitemap: https://ordertaker.niledreamsdigital.com/sitemap.xml
