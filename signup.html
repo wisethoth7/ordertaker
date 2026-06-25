@@ -16,12 +16,12 @@
     --surface: #130505;
     --card: #1A0707;
     --accent: #FF6B35;
-    --accent2: #EF4444;
     --accent-dim: rgba(255,107,53,0.12);
     --border: rgba(255,107,53,0.15);
     --text: #FFF5F5;
     --text2: #9A7575;
     --green: #4ADE80;
+    --red: #EF4444;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -32,8 +32,6 @@
     line-height: 1.6;
     min-height: 100vh;
   }
-
-  /* NAV */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     padding: 16px 48px;
@@ -41,18 +39,7 @@
     background: rgba(10,3,3,0.9); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
-  .nav-logo { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
-  .nav-links a {
-    color: var(--text2); text-decoration: none; font-size: 14px;
-    transition: color 0.2s;
-  }
-  .nav-links a:hover { color: var(--text); }
-
-  /* PAGE */
-  .signup-wrap {
-    max-width: 480px; margin: 0 auto;
-    padding: 140px 24px 80px;
-  }
+  .signup-wrap { max-width: 480px; margin: 0 auto; padding: 140px 24px 80px; }
   .signup-eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 14px; border-radius: 100px;
@@ -61,78 +48,59 @@
     margin-bottom: 20px;
   }
   .signup-eyebrow::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); }
-  h1 {
-    font-size: clamp(28px, 5vw, 38px); font-weight: 800; letter-spacing: -1px;
-    margin-bottom: 12px;
-  }
+  h1 { font-size: clamp(28px,5vw,38px); font-weight: 800; letter-spacing:-1px; margin-bottom:12px; }
   h1 .highlight { color: var(--accent); }
-  .signup-sub { color: var(--text2); font-size: 15px; margin-bottom: 32px; }
-
-  /* FORM */
+  .signup-sub { color: var(--text2); font-size: 15px; margin-bottom: 28px; }
+  .auth-tabs { display: flex; }
+  .auth-tab {
+    flex: 1; padding: 12px; text-align: center; font-size: 13px; font-weight: 700;
+    background: var(--surface); color: var(--text2);
+    border: 1px solid var(--border); border-bottom: none;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .auth-tab:first-child { border-radius: 12px 0 0 0; }
+  .auth-tab:last-child { border-radius: 0 12px 0 0; }
+  .auth-tab.active { background: var(--card); color: var(--accent); }
   .form-card {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; padding: 32px;
+    border-radius: 0 0 16px 16px; padding: 28px 32px 32px;
   }
-  .form-group { margin-bottom: 18px; }
-  .form-group label {
-    display: block; font-size: 13px; font-weight: 700;
-    margin-bottom: 6px; color: var(--text);
-  }
-  .form-group input, .form-group select {
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .form-group input {
     width: 100%; padding: 12px 14px;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; color: var(--text); font-size: 14px;
     font-family: inherit; transition: border-color 0.2s;
   }
-  .form-group input:focus, .form-group select:focus {
-    outline: none; border-color: var(--accent);
-  }
+  .form-group input:focus { outline: none; border-color: var(--accent); }
   .form-group input::placeholder { color: var(--text2); }
   .form-row { display: flex; gap: 12px; }
   .form-row .form-group { flex: 1; }
-
   .btn-primary {
-    width: 100%; display: block; text-align: center;
-    padding: 15px 32px; background: var(--accent); color: #1a0000;
+    width: 100%; display: block; padding: 15px;
+    background: var(--accent); color: #1a0000;
     font-weight: 800; font-size: 15px; border-radius: 10px;
-    text-decoration: none; border: none; cursor: pointer;
-    transition: opacity 0.2s; margin-top: 8px;
+    border: none; cursor: pointer; transition: opacity 0.2s; margin-top: 8px;
   }
   .btn-primary:hover { opacity: 0.9; }
-
-  .signup-note {
-    text-align: center; font-size: 12px; color: var(--text2);
-    margin-top: 16px;
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .auth-msg {
+    text-align: center; font-size: 13px; font-weight: 600;
+    margin-top: 14px; min-height: 20px; line-height: 1.5;
   }
-  .trial-perks {
-    margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border);
-  }
-  .trial-perks div {
-    display: flex; align-items: flex-start; gap: 10px;
-    font-size: 13px; color: var(--text2); margin-bottom: 10px;
-  }
-  .trial-perks span.check { color: var(--green); font-weight: 800; }
-
-  /* SUCCESS STATE */
-  .success-card {
-    display: none; text-align: center; padding: 48px 32px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px;
-  }
-  .success-card .icon { font-size: 48px; margin-bottom: 16px; }
-  .success-card h2 { font-size: 22px; margin-bottom: 10px; }
-  .success-card p { color: var(--text2); font-size: 14px; }
-
-  /* FOOTER */
+  .auth-msg.error { color: var(--red); }
+  .auth-msg.success { color: var(--green); }
+  .trial-perks { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .trial-perks div { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+  .trial-perks span.check { color: var(--green); font-weight: 800; flex-shrink: 0; }
   footer {
     padding: 32px 48px; border-top: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
     color: var(--text2); font-size: 13px;
   }
-
   @media (max-width: 768px) {
     nav { padding: 14px 20px; }
-    .nav-links { display: none; }
     .signup-wrap { padding: 120px 20px 60px; }
     .form-row { flex-direction: column; gap: 0; }
     footer { flex-direction: column; gap: 10px; text-align: center; }
@@ -141,100 +109,62 @@
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <a href="index.html" style="text-decoration:none">
-    <div class="nav-logo" style="display:flex;align-items:center;gap:10px"><img src="icons/ot-icon-96.png" alt="" style="width:40px;height:40px;border-radius:9px"><span style="white-space:nowrap"><span style="color:var(--text)">Order</span><span style="color:var(--accent)">Taker</span></span></div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--text)">
+      <img src="icons/ot-icon-96.png" alt="" style="width:40px;height:40px;border-radius:9px">
+      <span><span style="color:var(--text)">Order</span><span style="color:var(--accent)">Taker</span></span>
+    </div>
   </a>
   <a href="index.html" style="color:var(--text2);text-decoration:none;font-size:14px">← Back to home</a>
 </nav>
 
-<!-- SIGNUP -->
 <div class="signup-wrap">
   <div class="signup-eyebrow">7-DAY MONEY-BACK GUARANTEE</div>
   <h1>Start answering<br>every call <span class="highlight">today.</span></h1>
-  <p class="signup-sub">Tell us about your restaurant and we'll have your AI phone agent ready within 24 hours. No credit card required to start your trial.</p>
+  <p class="signup-sub">Your AI phone agent handles orders, reservations, and FAQs 24/7 — so you never miss another call. No credit card required to start your trial.</p>
 
-  <!-- PLAN SELECTOR -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px" id="planSelector">
-    <div class="plan-opt" data-plan="starter" data-price="199" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
-      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">STARTER</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">$199</div>
-      <div style="font-size:11px;color:var(--text2)">/month</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:4px">1,000 min</div>
-    </div>
-    <div class="plan-opt plan-selected" data-plan="pro" data-price="299" onclick="selectPlan(this)" style="border:2px solid var(--accent);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(255,107,53,0.06)">
-      <div style="font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:2px">MOST POPULAR</div>
-      <div style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:4px">PRO</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">$299</div>
-      <div style="font-size:11px;color:var(--text2)">/month</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:4px">2,000 min</div>
-    </div>
-    <div class="plan-opt" data-plan="business" data-price="499" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
-      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">BUSINESS</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">$499</div>
-      <div style="font-size:11px;color:var(--text2)">/month</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:4px">5,000 min · Square POS</div>
-    </div>
-    <div class="plan-opt" data-plan="enterprise" onclick="selectPlan(this)" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s">
-      <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:4px">ENTERPRISE</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">$799</div>
-      <div style="font-size:11px;color:var(--text2)">/month</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:4px">10,000 min · 2hr SLA</div>
-    </div>
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tab-signup" onclick="switchTab('signup')">Create account</button>
+    <button class="auth-tab" id="tab-login" onclick="switchTab('login')">Already a customer</button>
   </div>
 
-  <form class="form-card" id="signupForm">
-    <input type="hidden" id="selectedPlan" name="selectedPlan" value="pro">
-    <div class="form-group">
-      <label for="restaurantName">Restaurant Name</label>
-      <input type="text" id="restaurantName" name="restaurantName" placeholder="e.g. Mario Kitchen" required>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="ownerName">Your Name</label>
-        <input type="text" id="ownerName" name="ownerName" placeholder="John Smith" required>
-      </div>
-      <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567" required>
+  <div class="form-card">
+    <div id="signup-fields">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="restaurantName">Restaurant Name</label>
+          <input type="text" id="restaurantName" placeholder="e.g. Mario Kitchen" autocomplete="organization">
+        </div>
+        <div class="form-group">
+          <label for="ownerName">Your Name</label>
+          <input type="text" id="ownerName" placeholder="John Smith" autocomplete="name">
+        </div>
       </div>
     </div>
+
     <div class="form-group">
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@restaurant.com" required>
+      <input type="email" id="email" placeholder="you@restaurant.com" autocomplete="email">
     </div>
     <div class="form-group">
-      <label for="locations">Number of Locations</label>
-      <select id="locations" name="locations">
-        <option value="1">1 restaurant</option>
-        <option value="2">2 restaurants</option>
-        <option value="3">3 restaurants</option>
-        <option value="4+">4 or more</option>
-      </select>
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="8+ characters" autocomplete="current-password">
     </div>
-    <button type="submit" class="btn-primary" id="submitBtn">Get Started — $299/month — 7-Day Money-Back</button>
-    <p class="signup-note">No credit card required · Cancel anytime · Setup in 24 hours</p>
 
-    <div class="trial-perks">
-      <div><span class="check">✓</span> Agent auto-pauses outside your hours — no wasted minutes</div>
+    <button class="btn-primary" id="submitBtn" onclick="submitAuth()">Start Free Trial</button>
+    <div class="auth-msg" id="authMsg"></div>
+
+    <div class="trial-perks" id="trialPerks">
+      <div><span class="check">✓</span> 7-day money-back guarantee — no risk</div>
       <div><span class="check">✓</span> Upload your menu — the AI learns it automatically</div>
       <div><span class="check">✓</span> Unlimited simultaneous calls, no busy signals</div>
-      <div><span class="check">✓</span> Live kitchen dashboard + SMS/email confirmations</div>
-      <div><span class="check">✓</span> Spam & wrong-number protection built in</div>
+      <div><span class="check">✓</span> Live kitchen dashboard + SMS/email order alerts</div>
+      <div><span class="check">✓</span> Agent auto-pauses outside your business hours</div>
     </div>
-  </form>
-
-  <div class="success-card" id="successCard">
-    <div class="icon">🎉</div>
-    <h2>You're all set!</h2>
-    <p>Thanks for signing up. Complete your payment below to activate your AI agent within 24 hours.</p>
-    <a id="stripePayBtn" href="#" style="display:block;margin-top:20px;padding:14px;background:var(--accent);color:#1a0000;font-weight:800;font-size:14px;border-radius:10px;text-decoration:none">Complete Payment →</a>
-    <p style="font-size:11px;color:var(--text2);margin-top:10px">7-day money-back guarantee · Cancel anytime</p>
   </div>
 </div>
 
-<!-- FOOTER -->
 <footer>
   <span>© 2026 OrderTaker. All rights reserved.</span>
   <span>AI Phone Agent for Restaurants</span>
@@ -245,109 +175,99 @@ const SUPABASE_URL = 'https://hvyfeebazmiqateniupm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eWZlZWJhem1pcWF0ZW5pdXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMTI2MTcsImV4cCI6MjA5NTY4ODYxN30.89qqEshOwp1bU2AQbzSpZ36_TuqP2jVULo_9Ug-S9_c';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const PLAN_LABELS = { starter: '$199/month', pro: '$299/month', business: '$499/month', enterprise: 'Contact Us' };
-const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/00wcMY5LK9bLcd39cv18c05',
-  pro: 'https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01',
-  business: 'https://buy.stripe.com/5kQ28kdec2Nn3Gx2O718c06',
-};
+let currentMode = 'signup';
 
-function selectPlan(el) {
-  document.querySelectorAll('.plan-opt').forEach(p => {
-    p.style.border = '2px solid var(--border)';
-    p.style.background = 'transparent';
-  });
-  el.style.border = '2px solid var(--accent)';
-  el.style.background = 'rgba(255,107,53,0.06)';
-  const plan = el.dataset.plan;
-  document.getElementById('selectedPlan').value = plan;
-  const btn = document.getElementById('submitBtn');
-  if (plan === 'enterprise') {
-    btn.textContent = 'Contact Us for Enterprise →';
-    btn.type = 'button';
-    btn.onclick = function() { window.open('https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07','_blank'); };
-  } else {
-    btn.textContent = 'Get Started — ' + PLAN_LABELS[plan] + ' — 7-Day Money-Back';
-    btn.type = 'submit';
-    btn.onclick = null;
-  }
-}
-
-// Pre-select plan from URL param
-(function() {
-  const urlPlan = new URLSearchParams(window.location.search).get('plan');
-  if (urlPlan && ['starter','pro','business','enterprise'].includes(urlPlan)) {
-    const el = document.querySelector(`.plan-opt[data-plan="${urlPlan}"]`);
-    if (el) selectPlan(el);
-  }
+// Redirect if already logged in
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) window.location.replace('dashboard.html');
 })();
 
-document.getElementById('signupForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const form = e.target;
-  const plan = form.selectedPlan.value || 'pro';
-  if (plan === 'enterprise') {
-    window.open('https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07','_blank');
+function switchTab(mode) {
+  currentMode = mode;
+  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('signup-fields').style.display = mode === 'signup' ? '' : 'none';
+  document.getElementById('trialPerks').style.display = mode === 'signup' ? '' : 'none';
+  document.getElementById('submitBtn').textContent = mode === 'signup' ? 'Start Free Trial' : 'Log In';
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authMsg').className = 'auth-msg';
+}
+
+function showMsg(msg, type) {
+  const el = document.getElementById('authMsg');
+  el.textContent = msg;
+  el.className = 'auth-msg ' + type;
+}
+
+async function submitAuth() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('submitBtn');
+
+  if (!email || !password) { showMsg('Please fill in all fields.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Please wait...';
+  showMsg('', '');
+
+  if (currentMode === 'login') {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      showMsg(error.message || 'Login failed. Check your credentials.', 'error');
+      btn.disabled = false; btn.textContent = 'Log In';
+    } else {
+      window.location.replace('dashboard.html');
+    }
     return;
   }
-  const submitBtn = form.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting...';
 
-  const data = {
-    restaurant_name: form.restaurantName.value,
-    owner_name: form.ownerName.value,
-    email: form.email.value,
-    phone: form.phone.value,
-    locations: form.locations.value,
-    plan: plan,
-  };
+  // SIGNUP
+  if (password.length < 8) {
+    showMsg('Password must be at least 8 characters.', 'error');
+    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    return;
+  }
+  const restaurantName = document.getElementById('restaurantName').value.trim();
+  const ownerName = document.getElementById('ownerName').value.trim();
+  if (!restaurantName || !ownerName) {
+    showMsg('Please enter your restaurant name and your name.', 'error');
+    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    return;
+  }
 
-  const { error } = await sb.from('ot_signups').insert([data]);
-
+  const { data, error } = await sb.auth.signUp({ email, password });
   if (error) {
-    submitBtn.disabled = false;
-    submitBtn.textContent = originalText;
-    alert('Something went wrong submitting your info. Please try again or contact support.');
-    console.error(error);
+    showMsg(error.message || 'Sign up failed. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Start Free Trial';
     return;
   }
 
-  // Fire welcome email (non-blocking)
-  const PLAN_MINUTES = { starter: '1,000', pro: '2,000', business: '5,000', enterprise: '10,000' };
-  fetch('https://hvyfeebazmiqateniupm.supabase.co/functions/v1/send-welcome-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: data.email,
-      name: data.owner_name,
-      product: 'ordertaker',
-      plan: plan.charAt(0).toUpperCase() + plan.slice(1),
-      minutes: PLAN_MINUTES[plan] || '2,000'
-    })
-  }).catch(() => {});
-
-  const payBtn = document.getElementById('stripePayBtn');
-  if (plan === 'pro') {
-    payBtn.href = STRIPE_LINKS.pro;
-    payBtn.textContent = 'Complete Payment — $299/month →';
-  } else if (plan === 'starter') {
-    payBtn.href = STRIPE_LINKS.starter;
-    payBtn.textContent = 'Request Starter Setup — $199/month →';
-  } else if (plan === 'business') {
-    payBtn.href = STRIPE_LINKS.business;
-    payBtn.textContent = 'Request Business Setup — $499/month →';
+  if (data.user && !data.session) {
+    // Email confirmation required
+    showMsg('Check your email to confirm your account, then come back here to log in.', 'success');
+    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    return;
   }
-  form.style.display = 'none';
-  document.getElementById('successCard').style.display = 'block';
-});
+
+  // Session exists — create the restaurant row (ONE RULE)
+  const { error: restErr } = await sb.from('ot_restaurants').insert([{
+    user_id: data.user.id,
+    owner_email: email,
+    name: restaurantName,
+    status: 'trial',
+    plan: 'starter'
+  }]);
+  if (restErr) console.warn('Could not create restaurant row:', restErr.message);
+
+  window.location.replace('dashboard.html');
+}
 </script>
 <script src="ra-widget.js"></script>
 <script>
 initRa({
   accentColor: '#FF6B35',
-  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help prospective customers with: choosing the right plan (Starter $199, Pro $299, Business $499, Enterprise $799), understanding what is included, the signup process, and what happens after they sign up. For billing questions, direct to support@niledreamsdigital.com.'
+  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help prospective customers understand what OrderTaker does, how it handles restaurant calls, the free trial, pricing (Starter $199, Pro $299, Business $499, Enterprise $799/mo), and what happens after sign-up. For billing questions, direct to support@niledreamsdigital.com.'
 });
 </script>
 </body>
