@@ -267,6 +267,13 @@ async function submitAuth() {
     return;
   }
 
+  // Fire the branded welcome email (non-blocking — don't hold up signup)
+  if (data.user) {
+    sb.functions.invoke('send-welcome-email', {
+      body: { to: email, name: ownerName, product: 'ordertaker', plan: 'starter' }
+    }).catch(() => {});
+  }
+
   if (data.user && !data.session) {
     // Email confirmation required
     showMsg('Check your email to confirm your account, then come back here to log in.', 'success');
@@ -311,7 +318,7 @@ async function sendResetEmail() {
   const btn = document.getElementById('reset-email-btn');
   if (!email) { showMsg('Please enter your email.', 'error'); return; }
   btn.disabled = true; btn.textContent = 'Sending...';
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://ordertaker.niledreamsdigital.com/reset-password' });
   btn.disabled = false; btn.textContent = 'Send Reset Email';
   showMsg(error ? (error.message || 'Could not send reset email.') : 'Reset link sent — check your email!', error ? 'error' : 'success');
 }
