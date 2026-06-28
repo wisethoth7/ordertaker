@@ -166,7 +166,7 @@
       </div>
     </div>
 
-    <button class="btn-primary" id="submitBtn" onclick="submitAuth()">Start Free Trial</button>
+    <button class="btn-primary" id="submitBtn" onclick="submitAuth()">Create Account</button>
     <div class="auth-msg" id="authMsg"></div>
 
     <div class="trial-perks" id="trialPerks">
@@ -212,7 +212,7 @@ function switchTab(mode) {
   document.getElementById('tab-login').classList.toggle('active', mode === 'login');
   document.getElementById('signup-fields').style.display = mode === 'signup' ? '' : 'none';
   document.getElementById('trialPerks').style.display = mode === 'signup' ? '' : 'none';
-  document.getElementById('submitBtn').textContent = mode === 'signup' ? 'Start Free Trial' : 'Log In';
+  document.getElementById('submitBtn').textContent = mode === 'signup' ? 'Create Account' : 'Log In';
   document.getElementById('authMsg').textContent = '';
   document.getElementById('authMsg').className = 'auth-msg';
   hideForgot();
@@ -249,21 +249,21 @@ async function submitAuth() {
   // SIGNUP
   if (password.length < 8) {
     showMsg('Password must be at least 8 characters.', 'error');
-    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
   const restaurantName = document.getElementById('restaurantName').value.trim();
   const ownerName = document.getElementById('ownerName').value.trim();
   if (!restaurantName || !ownerName) {
     showMsg('Please enter your restaurant name and your name.', 'error');
-    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
 
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) {
     showMsg(error.message || 'Sign up failed. Please try again.', 'error');
-    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
 
@@ -277,7 +277,7 @@ async function submitAuth() {
   if (data.user && !data.session) {
     // Email confirmation required
     showMsg('Check your email to confirm your account, then come back here to log in.', 'success');
-    btn.disabled = false; btn.textContent = 'Start Free Trial';
+    btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
 
