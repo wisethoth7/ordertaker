@@ -239,6 +239,17 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </div>
   </div>
 
+  <!-- FALLBACK / FORWARD-TO NUMBER -->
+  <div style="background:var(--card2);border-radius:10px;padding:11px 14px;margin-top:8px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:2px">↪️ Forward to staff when the agent can't help</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">When the agent is off, or a caller asks for a human / something it can't resolve, calls ring this number so your staff can pick up.</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="tel" id="forwardNumberInput" placeholder="(732) 555-1234" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+      <button onclick="saveForwardNumber()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
+    </div>
+    <div id="forwardToHint" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
+  </div>
+
   <div style="font-size:11px;color:var(--text2);margin-top:10px;text-align:center" id="minutesUsed">Loading usage...</div>
 </div>
 
@@ -265,9 +276,13 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <button onclick="addStaffPhone()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
     <button onclick="document.getElementById('addPhoneRow').style.display='none'" style="background:var(--card2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer">✕</button>
   </div>
+  <div style="font-size:12px;color:var(--text2);font-weight:700;margin:6px 0 8px">📧 Alert Emails</div>
+  <div id="alertEmailsList" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px">
+    <div style="padding:14px 18px;color:var(--text2);font-size:13px">Loading...</div>
+  </div>
   <div style="display:flex;gap:8px;align-items:center">
-    <input type="email" id="alertEmailInput" placeholder="Alert email (e.g. you@restaurant.com)" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
-    <button onclick="saveAlertEmail()" style="background:var(--card2);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Save Email</button>
+    <input type="email" id="alertEmailInput" placeholder="Add alert email (e.g. you@restaurant.com)" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+    <button onclick="addAlertEmail()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">Add Email</button>
   </div>
 </div>
 
@@ -331,23 +346,61 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     To downgrade, email <a href="mailto:support@niledreamsdigital.com?subject=Plan Downgrade Request" style="color:var(--accent)">support@niledreamsdigital.com</a> — we'll process it before your next billing date.
   </div>
 
-  <!-- Multi-Location Pricing Table -->
-  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">MULTI-LOCATION PRICING</div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px">
-    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:10px 16px;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)">
-      <div>Plan</div><div>1st Location</div><div>Each Additional (15% off)</div><div>Monthly Savings</div>
+  <!-- Usage This Cycle -->
+  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">USAGE THIS BILLING CYCLE</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;margin-bottom:6px">MINUTES USED</div>
+      <div style="font-size:24px;font-weight:900" id="usage-minutes">—</div>
+      <div style="font-size:11px;color:var(--text2)" id="usage-minutes-sub">of plan allowance</div>
     </div>
-    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border)">
-      <div style="font-weight:700;color:var(--text2)">Starter</div><div>$199/mo</div><div style="color:var(--green)">$169.15/mo</div><div style="color:var(--green)">$29.85/mo</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;margin-bottom:6px">CALLS THIS CYCLE</div>
+      <div style="font-size:24px;font-weight:900" id="usage-calls">—</div>
+      <div style="font-size:11px;color:var(--text2)">answered by your agent</div>
     </div>
-    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);background:rgba(255,107,53,0.04)">
-      <div style="font-weight:700;color:var(--accent)">Pro ⭐</div><div>$299/mo</div><div style="color:var(--green)">$254.15/mo</div><div style="color:var(--green)">$44.85/mo</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;margin-bottom:6px">ORDERS THIS CYCLE</div>
+      <div style="font-size:24px;font-weight:900" id="usage-orders">—</div>
+      <div style="font-size:11px;color:var(--text2)">captured by your agent</div>
     </div>
-    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border)">
-      <div style="font-weight:700;color:var(--text2)">Business</div><div>$499/mo</div><div style="color:var(--green)">$424.15/mo</div><div style="color:var(--green)">$74.85/mo</div>
+  </div>
+
+  <!-- Connect your POS -->
+  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">POS INTEGRATION</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+      <div>
+        <div style="font-size:15px;font-weight:800">Connect your POS</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">When connected, every order the agent captures is pushed straight to your POS.</div>
+      </div>
+      <span id="pos-status-badge" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:var(--card2);color:var(--text2);border:1px solid var(--border)">Not connected</span>
     </div>
-    <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;padding:12px 16px;font-size:13px">
-      <div style="font-weight:700;color:var(--text2)">Enterprise</div><div>$799/mo</div><div style="color:var(--green)">$679.15/mo</div><div style="color:var(--green)">$119.85/mo</div>
+    <div style="display:grid;gap:10px;max-width:520px">
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">POS SYSTEM</label>
+        <select id="pos-type" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+          <option value="">— Select —</option>
+          <option value="square">Square</option>
+          <option value="toast">Toast (coming soon)</option>
+          <option value="clover">Clover (coming soon)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">ACCESS TOKEN</label>
+        <input type="password" id="pos-token" placeholder="Paste your Square access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
+        <input type="text" id="pos-location" placeholder="Square location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button onclick="savePosConnection()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Connect POS</button>
+        <button onclick="disconnectPos()" id="pos-disconnect-btn" style="display:none;background:var(--card2);color:var(--red);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Disconnect</button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-top:4px">
+        In Square: Developer Dashboard → your application → <strong style="color:var(--text)">Production Access Token</strong>, and Locations → <strong style="color:var(--text)">Location ID</strong>. We store these securely against your restaurant.
+      </div>
     </div>
   </div>
 
@@ -405,88 +458,19 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
     <!-- NEW column -->
     <div style="flex:1;min-width:260px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--accent);margin-bottom:14px">🔴 New (2)</div>
-      <!-- Maria Garcia -->
-      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="font-size:20px;font-weight:900">Maria Garcia</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700">2 min ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1084</div>
-        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
-          <div>🫔 Chicken Enchiladas ×2</div>
-          <div>🍚 Rice &amp; Beans</div>
-          <div>🥑 Guacamole</div>
-        </div>
-        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $38.50</div>
-      </div>
-      <!-- Mike Johnson -->
-      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="font-size:20px;font-weight:900">Mike Johnson</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700">5 min ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1083</div>
-        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
-          <div>🍕 Pepperoni Pizza (Large)</div>
-          <div>🍗 Wings 8pc (Buffalo)</div>
-        </div>
-        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $34.00</div>
-      </div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--accent);margin-bottom:14px">🔴 New (<span id="kc-count-new">0</span>)</div>
+      <div id="kc-new"></div>
     </div>
     <!-- PREPARING column -->
     <div style="flex:1;min-width:260px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--yellow);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--yellow);margin-bottom:14px">🟡 Preparing (2)</div>
-      <!-- James Carter -->
-      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:14px;padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="font-size:20px;font-weight:900">James Carter</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700">9 min ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">DELIVERY · #1082</div>
-        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
-          <div>🍔 BBQ Burger</div>
-          <div>🧅 Onion Rings</div>
-          <div style="color:var(--green)">✨ Root Beer Float</div>
-        </div>
-        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $29.75</div>
-      </div>
-      <!-- Sofia Rodriguez -->
-      <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:14px;padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="font-size:20px;font-weight:900">Sofia Rodriguez</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700">11 min ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1081</div>
-        <div style="font-size:16px;line-height:2;border-top:1px solid var(--border);padding-top:10px">
-          <div>🌮 Tacos al Pastor ×3</div>
-          <div>🫔 Quesadilla</div>
-          <div>🥤 Horchata</div>
-        </div>
-        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--accent)">Total: $31.00</div>
-      </div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--yellow);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--yellow);margin-bottom:14px">🟡 Preparing (<span id="kc-count-preparing">0</span>)</div>
+      <div id="kc-preparing"></div>
     </div>
     <!-- READY column -->
     <div style="flex:1;min-width:260px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--green);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--green);margin-bottom:14px">🟢 Ready (1)</div>
-      <!-- Luis Hernandez -->
-      <div style="background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.25);border-left:4px solid var(--green);border-radius:14px;padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="font-size:20px;font-weight:900">Luis Hernandez</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700">14 min ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:700">PICKUP · #1080</div>
-        <div style="font-size:16px;line-height:2;border-top:1px solid rgba(74,222,128,0.15);padding-top:10px">
-          <div>🥩 Cheesesteak</div>
-          <div>🍟 Loaded Fries</div>
-          <div>🍋 Lemonade</div>
-        </div>
-        <div style="margin-top:12px;font-size:18px;font-weight:900;color:var(--green)">Total: $26.50 ✓ READY</div>
-      </div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--green);text-transform:uppercase;padding:0 4px 12px;border-bottom:2px solid var(--green);margin-bottom:14px">🟢 Ready (<span id="kc-count-ready">0</span>)</div>
+      <div id="kc-ready"></div>
     </div>
-  </div>
-  <div style="margin-top:16px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text2);text-align:center">
-    Demo data shown above — live orders from your customers will appear here automatically once your agent is active.
   </div>
 </div><!-- end panel-kitchen -->
 
@@ -854,6 +838,92 @@ async function moveOrder(orderId, newStatus) {
   setTimeout(loadOrders, 250);
 }
 
+// ── KITCHEN DISPLAY ─────────────────────────────────────────────────────
+function paymentBadge(pm) {
+  const method = (pm || '').toLowerCase();
+  if (method === 'card' || method === 'credit' || method === 'paid') {
+    return `<span style="display:inline-block;font-size:12px;font-weight:800;color:#60A5FA">💳 Card</span>
+            <span style="display:inline-block;font-size:11px;font-weight:800;color:var(--accent);background:rgba(255,107,53,.12);border:1px solid rgba(255,107,53,.3);border-radius:6px;padding:2px 8px;margin-left:6px">COLLECT PAYMENT</span>`;
+  }
+  if (method === 'cash') return `<span style="font-size:12px;font-weight:800;color:var(--green)">💵 Cash</span>`;
+  return `<span style="font-size:12px;font-weight:700;color:var(--text2)">Payment: —</span>`;
+}
+
+function kitchenCardHTML(o) {
+  const items = (ITEMS_BY_ORDER[o.id] || []);
+  const itemsHtml = items.length
+    ? items.map(it => `<div>${it.quantity ? it.quantity + '× ' : ''}${escapeHtml(it.name || it.item_name || 'Item')}</div>`).join('')
+    : '<div style="color:var(--text2)">Items in call transcript</div>';
+  const mins = Math.max(0, Math.round((Date.now() - new Date(o.created_at).getTime()) / 60000));
+  const type = (o.order_type || 'pickup').toUpperCase();
+  const total = Number(o.total || o.total_amount || 0).toFixed(2);
+  const accent = o.status === 'ready' ? 'var(--green)' : o.status === 'preparing' ? 'var(--yellow)' : 'var(--accent)';
+  const bg = o.status === 'ready' ? 'rgba(74,222,128,0.05)' : 'var(--card)';
+  let btn = '';
+  if (o.status === 'new')        btn = `<button onclick="kitchenMove('${o.id}','preparing')" style="margin-top:12px;width:100%;padding:11px;background:var(--yellow);color:#1a0a00;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Start Preparing →</button>`;
+  else if (o.status === 'preparing') btn = `<button onclick="kitchenMove('${o.id}','ready')" style="margin-top:12px;width:100%;padding:11px;background:var(--green);color:#04210f;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Mark Ready →</button>`;
+  else if (o.status === 'ready')  btn = `<button onclick="kitchenMove('${o.id}','completed')" style="margin-top:12px;width:100%;padding:11px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Complete &amp; Clear ✓</button>`;
+  return `<div style="background:${bg};border:1px solid var(--border);border-left:4px solid ${accent};border-radius:14px;padding:18px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div style="font-size:20px;font-weight:900">${escapeHtml(o.customer_name || 'Guest')}</div>
+      <div style="font-size:11px;color:var(--text2);font-weight:700">${mins} min ago</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700">${type}${o.order_number ? ' · #' + o.order_number : ''}</div>
+    <div style="margin-bottom:10px">${paymentBadge(o.payment_method)}</div>
+    <div style="font-size:16px;line-height:1.9;border-top:1px solid var(--border);padding-top:10px">${itemsHtml}</div>
+    <div style="margin-top:12px;font-size:18px;font-weight:900;color:${accent}">Total: $${total}</div>
+    ${btn}
+  </div>`;
+}
+
+async function kitchenMove(orderId, newStatus) {
+  const { error } = await sb.from('ot_orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId);
+  if (error) { showToast('Could not update order'); return; }
+  loadKitchen();
+  loadOrders();
+}
+
+async function loadKitchen() {
+  if (!RESTAURANT_ID) return;
+  const cols = { new: document.getElementById('kc-new'), preparing: document.getElementById('kc-preparing'), ready: document.getElementById('kc-ready') };
+  if (!cols.new) return;
+  let orders, error;
+  try {
+    ({ data: orders, error } = await sb.from('ot_orders').select('*')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .in('status', ['new','preparing','ready'])
+      .order('created_at', { ascending: true }));
+  } catch (e) { error = e; }
+
+  if (error) {
+    Object.values(cols).forEach(c => c.innerHTML = `<div style="font-size:13px;color:var(--text2);padding:16px 0">Couldn't load orders.</div>`);
+    return;
+  }
+  orders = orders || [];
+
+  const ids = orders.map(o => o.id);
+  ITEMS_BY_ORDER = {};
+  if (ids.length) {
+    try {
+      const { data: items } = await sb.from('ot_order_items').select('*').in('order_id', ids);
+      (items || []).forEach(it => { (ITEMS_BY_ORDER[it.order_id] ||= []).push(it); });
+    } catch (e) { /* items optional */ }
+  }
+
+  const grouped = { new: [], preparing: [], ready: [] };
+  orders.forEach(o => grouped[o.status]?.push(o));
+  ['new','preparing','ready'].forEach(s => {
+    document.getElementById('kc-count-' + s).textContent = grouped[s].length;
+    cols[s].innerHTML = grouped[s].length
+      ? grouped[s].map(kitchenCardHTML).join('')
+      : `<div style="font-size:13px;color:var(--text2);padding:16px 0;text-align:center">No ${s} orders</div>`;
+  });
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 async function loadStats() {
   const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
@@ -879,15 +949,17 @@ async function loadStats() {
 }
 
 async function loadReservations() {
-  const today = new Date().toISOString().slice(0,10);
-  const { data: res, error } = await sb
-    .from('ot_reservations')
-    .select('*')
-    .eq('restaurant_id', RESTAURANT_ID)
-    .eq('reservation_date', today)
-    .order('reservation_time', { ascending: true });
-
   const list = document.getElementById('res-list');
+  let res, error;
+  try {
+    ({ data: res, error } = await sb
+      .from('ot_reservations')
+      .select('*')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('reservation_date', new Date().toISOString().slice(0,10))
+      .order('reservation_time', { ascending: true }));
+  } catch (e) { error = e; }
+
   if (error || !res || !res.length) {
     list.innerHTML = `<div class="res-row"><div class="res-info"><div class="res-meta">No reservations for today</div></div></div>`;
     return;
@@ -933,9 +1005,11 @@ const ALWAYS_HOURS = {
 };
 
 let currentMode = 'always';
-let customHours = JSON.parse(JSON.stringify(ALWAYS_HOURS));
+// Custom hours support TWO service windows per day: Lunch (open/close) + Dinner (open2/close2)
+let customHours = JSON.parse(JSON.stringify(BUSY_HOURS));
 let agentActive = true;
 let spamEnabled = true;
+let FORWARD_TO_NUMBER = '';
 
 function setScheduleMode(mode) {
   currentMode = mode;
@@ -949,21 +1023,39 @@ function setScheduleMode(mode) {
 
 function buildHoursGrid() {
   const grid = document.getElementById('hours-grid');
-  grid.innerHTML = DAYS.map(d => {
-    const h = customHours[d] || {open:'11:00',close:'22:00',enabled:true};
+  // Single-column layout: each day gets a Lunch window + a Dinner window
+  grid.style.display = 'block';
+  grid.innerHTML = `
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+      Set two service windows per day — e.g. <strong style="color:var(--text)">Lunch</strong> and <strong style="color:var(--text)">Dinner</strong>.
+      Leave a window blank to skip it. Toggle a day off to send all its calls to the closed message.
+    </div>` + DAYS.map(d => {
+    const h = customHours[d] || {open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true};
     return `
-      <div style="color:var(--text2);font-weight:700;padding-right:4px">${DAY_LABELS[d]}</div>
-      <input type="time" id="open-${d}" value="${h.open}" onchange="updateCustomHour('${d}')">
-      <input type="time" id="close-${d}" value="${h.close}" onchange="updateCustomHour('${d}')">
-      <div class="hours-toggle ${h.enabled ? 'on' : ''}" id="tog-${d}" onclick="toggleDay('${d}')">
-        <div class="knob"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-weight:800;font-size:13px">${DAY_LABELS[d]}</div>
+          <div class="hours-toggle ${h.enabled ? 'on' : ''}" id="tog-${d}" onclick="toggleDay('${d}')"><div class="knob"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:54px 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-size:11px;color:var(--text2);font-weight:700">Lunch</div>
+          <input type="time" id="open-${d}"  value="${h.open||''}"  onchange="updateCustomHour('${d}')">
+          <input type="time" id="close-${d}" value="${h.close||''}" onchange="updateCustomHour('${d}')">
+        </div>
+        <div style="display:grid;grid-template-columns:54px 1fr 1fr;gap:6px;align-items:center">
+          <div style="font-size:11px;color:var(--text2);font-weight:700">Dinner</div>
+          <input type="time" id="open2-${d}"  value="${h.open2||''}"  onchange="updateCustomHour('${d}')">
+          <input type="time" id="close2-${d}" value="${h.close2||''}" onchange="updateCustomHour('${d}')">
+        </div>
       </div>`;
   }).join('');
 }
 
 function updateCustomHour(day) {
-  customHours[day].open = document.getElementById(`open-${day}`).value;
-  customHours[day].close = document.getElementById(`close-${day}`).value;
+  customHours[day].open   = document.getElementById(`open-${day}`).value;
+  customHours[day].close  = document.getElementById(`close-${day}`).value;
+  customHours[day].open2  = document.getElementById(`open2-${day}`).value;
+  customHours[day].close2 = document.getElementById(`close2-${day}`).value;
 }
 
 function toggleDay(day) {
@@ -975,6 +1067,23 @@ function toggleDay(day) {
 async function saveCustomHours() {
   await saveScheduleToSupabase();
   showToast('Hours saved!');
+}
+
+function renderForwardToHint() {
+  const el = document.getElementById('forwardToHint');
+  if (!el) return;
+  el.innerHTML = FORWARD_TO_NUMBER
+    ? `Your OrderTaker agent number is <strong style="color:var(--text)">${FORWARD_TO_NUMBER}</strong>.`
+    : '';
+}
+
+async function saveForwardNumber() {
+  const raw = document.getElementById('forwardNumberInput').value.replace(/\D/g, '');
+  if (raw && raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
+  const formatted = !raw ? null : (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
+  const { error } = await sb.from('ot_restaurants').update({ forward_number: formatted }).eq('id', RESTAURANT_ID);
+  if (error) { showToast('Could not save — try again'); return; }
+  showToast(formatted ? 'Fallback number saved!' : 'Fallback number cleared');
 }
 
 async function saveScheduleToSupabase() {
@@ -1019,10 +1128,20 @@ async function toggleSpam() {
 
 async function loadScheduleSettings() {
   if (!RESTAURANT_ID) return;
-  const { data } = await sb.from('ot_restaurants')
-    .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included,plan')
-    .eq('id', RESTAURANT_ID).single();
-  if (!data) return;
+  let data, error;
+  try {
+    ({ data, error } = await sb.from('ot_restaurants')
+      .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included,plan,forward_number,vapi_phone_number,twilio_phone,telnyx_phone')
+      .eq('id', RESTAURANT_ID).single());
+  } catch (e) { error = e; }
+
+  if (error || !data) {
+    // Never leave the panel stuck on "Loading…" — show sane defaults.
+    updateAgentToggleUI();
+    document.getElementById('minutesUsed').textContent = 'Usage will appear once your agent starts taking calls.';
+    return;
+  }
+
   if (data.plan) currentPlanKey = data.plan;
 
   agentActive = data.agent_active !== false;
@@ -1033,6 +1152,17 @@ async function loadScheduleSettings() {
   const spamTog = document.getElementById('spamToggle');
   spamTog.style.background = spamEnabled ? 'var(--accent)' : 'var(--border)';
   spamKnob.style.left = spamEnabled ? '20px' : '2px';
+
+  // Hydrate custom hours from saved open_hours (supports Lunch + Dinner windows)
+  if (data.open_hours && typeof data.open_hours === 'object') {
+    DAYS.forEach(d => { if (data.open_hours[d]) customHours[d] = { ...customHours[d], ...data.open_hours[d] }; });
+  }
+
+  // Forward-to number setting (off-hours / can't-answer fallback)
+  FORWARD_TO_NUMBER = data.vapi_phone_number || data.twilio_phone || data.telnyx_phone || '';
+  const fwdInput = document.getElementById('forwardNumberInput');
+  if (fwdInput) fwdInput.value = data.forward_number || '';
+  renderForwardToHint();
 
   const used = data.minutes_used || 0;
   const included = data.minutes_included || 2000;
@@ -1055,18 +1185,70 @@ function showToast(msg) {
   setTimeout(() => t.style.opacity = '0', 2500);
 }
 
-// ── STAFF ALERT NUMBERS ─────────────────────────────────────────────────
+// ── STAFF ALERT NUMBERS + EMAILS ────────────────────────────────────────
 let staffPhones = [];
+let alertEmails = [];
 
 async function loadStaffNumbers() {
   if (!RESTAURANT_ID) return;
-  const { data } = await sb.from('ot_restaurants')
-    .select('staff_phones, alert_email')
-    .eq('id', RESTAURANT_ID).single();
-  if (!data) return;
+  let data, error;
+  try {
+    ({ data, error } = await sb.from('ot_restaurants')
+      .select('staff_phones, alert_emails, alert_email')
+      .eq('id', RESTAURANT_ID).single());
+  } catch (e) { error = e; }
+
+  if (error || !data) {
+    staffPhones = []; alertEmails = [];
+    renderStaffPhones(); renderAlertEmails();
+    return;
+  }
   staffPhones = data.staff_phones || [];
+  // Prefer the new array; fall back to the legacy single alert_email
+  alertEmails = (data.alert_emails && data.alert_emails.length)
+    ? data.alert_emails
+    : (data.alert_email ? [data.alert_email] : []);
   renderStaffPhones();
-  if (data.alert_email) document.getElementById('alertEmailInput').value = data.alert_email;
+  renderAlertEmails();
+}
+
+function renderAlertEmails() {
+  const list = document.getElementById('alertEmailsList');
+  if (!list) return;
+  if (!alertEmails.length) {
+    list.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No alert emails yet — add one to get an email on every order.</div>';
+    return;
+  }
+  list.innerHTML = alertEmails.map((e, i) => `
+    <div class="staff-phone-row">
+      <div>
+        <div style="font-size:14px;font-weight:700;word-break:break-all">${e}</div>
+        <div style="font-size:11px;color:var(--text2)">Email alerts: new orders, reservations, callbacks</div>
+      </div>
+      <button onclick="removeAlertEmail(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
+    </div>`).join('');
+}
+
+async function addAlertEmail() {
+  const input = document.getElementById('alertEmailInput');
+  const email = input.value.trim().toLowerCase();
+  if (!email || !email.includes('@') || !email.includes('.')) { showToast('Enter a valid email address'); return; }
+  if (alertEmails.includes(email)) { showToast('Email already added'); return; }
+  alertEmails.push(email);
+  const { error } = await sb.from('ot_restaurants')
+    .update({ alert_emails: alertEmails, alert_email: alertEmails[0] }).eq('id', RESTAURANT_ID);
+  if (error) { alertEmails.pop(); showToast('Could not save — try again'); return; }
+  input.value = '';
+  renderAlertEmails();
+  showToast('Alert email added!');
+}
+
+async function removeAlertEmail(index) {
+  alertEmails.splice(index, 1);
+  await sb.from('ot_restaurants')
+    .update({ alert_emails: alertEmails, alert_email: alertEmails[0] || null }).eq('id', RESTAURANT_ID);
+  renderAlertEmails();
+  showToast('Email removed');
 }
 
 function renderStaffPhones() {
@@ -1111,13 +1293,6 @@ async function removeStaffPhone(index) {
   showToast('Number removed');
 }
 
-async function saveAlertEmail() {
-  const email = document.getElementById('alertEmailInput').value.trim();
-  if (!email || !email.includes('@')) { showToast('Enter a valid email address'); return; }
-  await sb.from('ot_restaurants').update({ alert_email: email }).eq('id', RESTAURANT_ID);
-  showToast('Alert email saved!');
-}
-
 // ── PLAN & BILLING ───────────────────────────────────────────────────────
 const PLAN_CONFIG = {
   starter:    { name: 'Starter',    price: 199, minutes: 1000,  overage: 0.20, staff_limit: 2 },
@@ -1140,6 +1315,7 @@ function switchTab(tab) {
   if (tab === 'calls') loadCallLogs();
   if (tab === 'checklist') renderChecklist();
   if (tab === 'menu') loadMenuItems();
+  if (tab === 'kitchen') loadKitchen();
 }
 
 // ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
@@ -1161,7 +1337,15 @@ const CHECKLIST_STEPS = [
   },
   {
     id: 'forward', icon: '↩️', title: 'Forward Your Calls',
-    body: `Set your restaurant's phone to forward unanswered calls to your OrderTaker number. Most carriers accept:<br><br><code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:12px;letter-spacing:1px">*21*+1[your-number]#</code><br><br>Or call your carrier — takes under 2 minutes.`,
+    body: `Forward calls to your OrderTaker agent so it can answer for you. <strong style="color:var(--text)">Conditional forwarding</strong> (recommended) only forwards when you're busy or don't pick up — you keep using your normal line.<br><br>
+      Forward your calls to: <code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:13px;letter-spacing:1px;color:var(--accent)">{{AGENT_NUMBER}}</code><br><br>
+      Dial from your restaurant phone:
+      <div style="margin:8px 0 0;font-size:12px;color:var(--text2);line-height:1.9">
+        • <strong style="color:var(--text)">Verizon / T-Mobile / US Cellular:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*71</code> then the number above, press call<br>
+        • <strong style="color:var(--text)">AT&T:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> (no-answer) — call<br>
+        • <strong style="color:var(--text)">Landline / other:</strong> <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> for no-answer, or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*21*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> to forward <em>all</em> calls
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text2)">To turn it off later: dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##61#</code> (or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##21#</code>). Not sure which carrier setting to use? Call your carrier — it takes under 2 minutes.</div>`,
     cta: ''
   },
   {
@@ -1182,7 +1366,7 @@ function renderChecklist() {
       <div style="flex:1">
         <div style="font-size:10px;font-weight:800;color:${isDone ? 'var(--green)' : 'var(--accent)'};letter-spacing:.8px;margin-bottom:3px">STEP ${i + 1} OF 5</div>
         <div style="font-size:15px;font-weight:800;margin-bottom:5px;${isDone ? 'opacity:.5' : ''}">${step.icon} ${step.title}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.65">${step.body}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.65">${step.body.replace(/\{\{AGENT_NUMBER\}\}/g, FORWARD_TO_NUMBER || 'your OrderTaker number')}</div>
         ${step.cta ? `<div>${step.cta}</div>` : ''}
       </div>
     </div>`;
@@ -1236,10 +1420,17 @@ async function loadCallLogs() {
 
 async function loadBillingData() {
   if (!RESTAURANT_ID) return;
-  const { data } = await sb.from('ot_restaurants')
-    .select('plan, plan_price, minutes_included, minutes_used, overage_rate')
-    .eq('id', RESTAURANT_ID).single();
+  let data;
+  try {
+    ({ data } = await sb.from('ot_restaurants')
+      .select('plan, plan_price, minutes_included, minutes_used, overage_rate, pos_type, pos_connected, pos_location_id, billing_period_start')
+      .eq('id', RESTAURANT_ID).single());
+  } catch (e) { data = null; }
   if (!data) return;
+
+  // Usage this cycle + POS connection state
+  hydratePosUI(data);
+  loadCycleUsage(data);
   currentPlanKey = data.plan || 'pro';
   const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.pro;
   const used = data.minutes_used || 0;
@@ -1260,6 +1451,79 @@ async function loadBillingData() {
     note.textContent = pct + '% of included minutes used this billing period.';
   }
   updatePlanCards(currentPlanKey);
+}
+
+function hydratePosUI(data) {
+  const badge = document.getElementById('pos-status-badge');
+  const disc = document.getElementById('pos-disconnect-btn');
+  const typeSel = document.getElementById('pos-type');
+  const locInput = document.getElementById('pos-location');
+  if (!badge) return;
+  if (typeSel && data.pos_type) typeSel.value = data.pos_type;
+  if (locInput && data.pos_location_id) locInput.value = data.pos_location_id;
+  if (data.pos_connected) {
+    badge.textContent = 'Connected' + (data.pos_type ? ' · ' + data.pos_type : '');
+    badge.style.background = 'rgba(74,222,128,0.1)';
+    badge.style.color = 'var(--green)';
+    badge.style.borderColor = 'rgba(74,222,128,0.3)';
+    if (disc) disc.style.display = '';
+  } else {
+    badge.textContent = 'Not connected';
+    badge.style.background = 'var(--card2)';
+    badge.style.color = 'var(--text2)';
+    badge.style.borderColor = 'var(--border)';
+    if (disc) disc.style.display = 'none';
+  }
+}
+
+async function loadCycleUsage(data) {
+  const cycleStart = data.billing_period_start
+    ? new Date(data.billing_period_start)
+    : (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+  const iso = cycleStart.toISOString();
+
+  const used = data.minutes_used || 0;
+  const included = data.minutes_included || (PLAN_CONFIG[currentPlanKey]||PLAN_CONFIG.pro).minutes;
+  document.getElementById('usage-minutes').textContent = used.toLocaleString();
+  document.getElementById('usage-minutes-sub').textContent = 'of ' + included.toLocaleString() + ' included';
+
+  try {
+    const { count: calls } = await sb.from('ot_call_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('restaurant_id', RESTAURANT_ID).gte('created_at', iso);
+    document.getElementById('usage-calls').textContent = (calls || 0).toLocaleString();
+  } catch { document.getElementById('usage-calls').textContent = '0'; }
+
+  try {
+    const { count: orders } = await sb.from('ot_orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('restaurant_id', RESTAURANT_ID).gte('created_at', iso);
+    document.getElementById('usage-orders').textContent = (orders || 0).toLocaleString();
+  } catch { document.getElementById('usage-orders').textContent = '0'; }
+}
+
+async function savePosConnection() {
+  const type = document.getElementById('pos-type').value;
+  const token = document.getElementById('pos-token').value.trim();
+  const location = document.getElementById('pos-location').value.trim();
+  if (!type) { showToast('Choose a POS system'); return; }
+  if (type !== 'square') { showToast('Only Square is available right now'); return; }
+  if (!token || !location) { showToast('Enter both the access token and location ID'); return; }
+  const update = { pos_type: type, pos_system: type, pos_access_token: token, pos_location_id: location, pos_connected: true };
+  const { error } = await sb.from('ot_restaurants').update(update).eq('id', RESTAURANT_ID);
+  if (error) { showToast('Could not connect — try again'); return; }
+  document.getElementById('pos-token').value = '';
+  hydratePosUI({ pos_connected: true, pos_type: type, pos_location_id: location });
+  showToast('POS connected!');
+}
+
+async function disconnectPos() {
+  if (!confirm('Disconnect your POS? Orders will stop being pushed to it.')) return;
+  const { error } = await sb.from('ot_restaurants')
+    .update({ pos_connected: false, pos_access_token: null }).eq('id', RESTAURANT_ID);
+  if (error) { showToast('Could not disconnect — try again'); return; }
+  hydratePosUI({ pos_connected: false, pos_type: document.getElementById('pos-type').value });
+  showToast('POS disconnected');
 }
 
 function updatePlanCards(activePlan) {
@@ -1305,7 +1569,7 @@ const OB_STEPS = [
   {
     icon: '↩️',
     title: 'Forward Your Calls',
-    body: 'Set your restaurant\'s phone to forward unanswered calls to your OrderTaker number. Most carriers accept this code:<br><br><code style="background:var(--card2);padding:6px 14px;border-radius:6px;font-size:13px;letter-spacing:1px">*21*+17329781797#</code><br><br>Or call your carrier — takes under 2 minutes.',
+    body: 'Forward your phone to your OrderTaker agent so it answers for you. <strong style="color:var(--text)">Conditional forwarding</strong> only kicks in when you\'re busy or don\'t pick up.<br><br>From your restaurant phone:<br>• <strong style="color:var(--text)">Verizon / T-Mobile:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*71</code> + your OrderTaker number<br>• <strong style="color:var(--text)">AT&T / landline:</strong> <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code><br><br>Your OrderTaker number is in the <strong style="color:var(--text)">Agent Schedule</strong> panel. Full per-carrier steps live in the Setup Checklist. Takes under 2 minutes.',
     action: '',
   },
   {
@@ -1409,20 +1673,24 @@ async function init() {
   document.querySelector('.restaurant-name').textContent =
     (rest.name || 'My Restaurant') + (rest.city ? ' · ' + rest.city : '');
 
-  await loadOrders();
-  await loadStats();
-  await loadReservations();
-  await loadScheduleSettings();
-  await loadStaffNumbers();
+  // Run each loader independently — one failure must never block the others
+  // (that was leaving Reservations / Staff / Spam / usage stuck on "Loading…").
+  await Promise.allSettled([
+    loadOrders(),
+    loadStats(),
+    loadReservations(),
+    loadScheduleSettings(),
+    loadStaffNumbers(),
+  ]);
 
   if (!localStorage.getItem('ot_onboarding_done')) setTimeout(showOnboarding, 800);
 
   sb.channel('ot_orders_changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ot_orders', filter: `restaurant_id=eq.${RESTAURANT_ID}` },
-      () => { loadOrders(); loadStats(); })
+      () => { loadOrders(); loadStats(); if (document.getElementById('panel-kitchen').style.display !== 'none') loadKitchen(); })
     .subscribe();
 
-  setInterval(loadOrders, 30000);
+  setInterval(() => { loadOrders(); if (document.getElementById('panel-kitchen').style.display !== 'none') loadKitchen(); }, 30000);
 }
 
 init();
