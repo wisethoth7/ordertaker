@@ -281,15 +281,9 @@ async function submitAuth() {
     return;
   }
 
-  // Session exists — create the restaurant row (ONE RULE)
-  const { error: restErr } = await sb.from('ot_restaurants').insert([{
-    user_id: data.user.id,
-    owner_email: email,
-    name: restaurantName,
-    status: 'trial',
-    plan: 'starter'
-  }]);
-  if (restErr) console.warn('Could not create restaurant row:', restErr.message);
+  // Session exists — create the restaurant row via RPC (ONE RULE)
+  const { error: restErr } = await sb.rpc('ensure_restaurant', { p_name: restaurantName || null, p_phone: null });
+  if (restErr) console.warn('ensure_restaurant failed:', restErr.message);
 
   window.location.replace('dashboard.html');
 }

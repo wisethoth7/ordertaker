@@ -1393,6 +1393,9 @@ async function init() {
   _currentUser = session.user;
   patchBillingLinks(_currentUser);
 
+  // Belt-and-suspenders: make sure this user has a restaurant row before we query.
+  await sb.rpc('ensure_restaurant', { p_name: null, p_phone: null }).catch(() => {});
+
   const { data: rest, error } = await sb
     .from('ot_restaurants')
     .select('id,name,city')
@@ -1404,7 +1407,7 @@ async function init() {
 
   RESTAURANT_ID = rest.id;
   document.querySelector('.restaurant-name').textContent =
-    rest.name + (rest.city ? ' · ' + rest.city : '');
+    (rest.name || 'My Restaurant') + (rest.city ? ' · ' + rest.city : '');
 
   await loadOrders();
   await loadStats();
