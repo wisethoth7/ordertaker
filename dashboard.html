@@ -1676,21 +1676,38 @@ async function init() {
   _currentUser = session.user;
   patchBillingLinks(_currentUser);
 
-  // Belt-and-suspenders: make sure this user has a restaurant row before we query.
-  await sb.rpc('ensure_restaurant', { p_name: null, p_phone: null }).catch(() => {});
+  // Ensure + fetch the restaurant row in ONE authenticated call. ensure_restaurant
+  // creates the row if missing and returns it, so we never depend on a separate
+  // read (or a prompt) that could leave the dashboard spinning.
+  let rest = null;
+  try {
+    const { data: ensured, error: ensErr } = await sb.rpc('ensure_restaurant', { p_name: null, p_phone: null });
+    if (ensErr) throw ensErr;
+    rest = ensured;
+  } catch (e) {
+    console.error('ensure_restaurant failed', e);
+    // Fallback: plain read in case the RPC is briefly unavailable
+    const { data } = await sb.from('ot_restaurants').select('*').eq('user_id', session.user.id).maybeSingle();
+    rest = data;
+  }
 
-  const { data: rest, error } = await sb
-    .from('ot_restaurants')
-    .select('id,name,city')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-
-  if (error) { console.error('Could not load restaurant', error); return; }
-  if (!rest) { showFirstTimeSetup(); return; }
-
-  RESTAURANT_ID = rest.id;
-  document.querySelector('.restaurant-name').textContent =
-    (rest.name || 'My Restaurant') + (rest.city ? ' · ' + rest.city : '');
+  if (rest) {
+    RESTAURANT_ID = rest.id;
+    document.querySelector('.restaurant-name').textContent =
+      (rest.name || 'My Restaurant') + (rest.city ? ' · ' + rest.city : '');
+  } else {
+    // Could not create or read a row — clear every "Loading…" placeholder so the
+    // dashboard shows empty states (never an infinite spinner) and stop here.
+    document.querySelector('.restaurant-name').textContent = 'Welcome';
+    const resList = document.getElementById('res-list');
+    if (resList) resList.innerHTML = `<div class="res-row"><div class="res-info"><div class="res-meta">No reservations yet</div></div></div>`;
+    const sp = document.getElementById('staffPhonesList'); if (sp) sp.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No numbers yet.</div>';
+    const ae = document.getElementById('alertEmailsList'); if (ae) ae.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No alert emails yet.</div>';
+    const mu = document.getElementById('minutesUsed'); if (mu) mu.textContent = 'Usage will appear once your agent starts taking calls.';
+    updateAgentToggleUI();
+    showToast('Setting up your restaurant… please refresh in a moment.');
+    return;
+  }
 
   // Run each loader independently — one failure must never block the others
   // (that was leaving Reservations / Staff / Spam / usage stuck on "Loading…").
