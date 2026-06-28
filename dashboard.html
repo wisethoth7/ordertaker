@@ -1170,7 +1170,7 @@ async function loadScheduleSettings() {
   renderForwardToHint();
 
   const used = data.minutes_used || 0;
-  const included = data.minutes_included || 2000;
+  const included = (PLAN_CONFIG[data.plan || currentPlanKey] || PLAN_CONFIG.starter).minutes;
   const pct = Math.min(100, Math.round((used/included)*100));
   document.getElementById('minutesUsed').innerHTML =
     `<span style="color:var(--text)">${used.toLocaleString()}</span> / ${included.toLocaleString()} minutes used this month (${pct}%)` +
@@ -1436,13 +1436,15 @@ async function loadBillingData() {
   // Usage this cycle + POS connection state
   hydratePosUI(data);
   loadCycleUsage(data);
-  currentPlanKey = data.plan || 'pro';
-  const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.pro;
+  // The plan is the source of truth: derive name/price/minutes from it, NOT from
+  // per-row columns (plan_price/minutes_included default to Pro values on new rows).
+  currentPlanKey = data.plan || 'starter';
+  const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.starter;
   const used = data.minutes_used || 0;
-  const included = data.minutes_included || cfg.minutes;
+  const included = cfg.minutes;
   const pct = Math.min(100, Math.round((used / included) * 100));
   document.getElementById('billing-plan-name').textContent = cfg.name;
-  document.getElementById('billing-plan-price').textContent = '$' + (data.plan_price || cfg.price);
+  document.getElementById('billing-plan-price').textContent = '$' + cfg.price;
   document.getElementById('billing-min-label').textContent = used.toLocaleString() + ' / ' + included.toLocaleString() + ' min';
   document.getElementById('billing-min-bar').style.width = pct + '%';
   document.getElementById('billing-min-bar').style.background =
@@ -1489,7 +1491,7 @@ async function loadCycleUsage(data) {
   const iso = cycleStart.toISOString();
 
   const used = data.minutes_used || 0;
-  const included = data.minutes_included || (PLAN_CONFIG[currentPlanKey]||PLAN_CONFIG.pro).minutes;
+  const included = (PLAN_CONFIG[data.plan || currentPlanKey] || PLAN_CONFIG.starter).minutes;
   document.getElementById('usage-minutes').textContent = used.toLocaleString();
   document.getElementById('usage-minutes-sub').textContent = 'of ' + included.toLocaleString() + ' included';
 
