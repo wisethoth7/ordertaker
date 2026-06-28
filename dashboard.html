@@ -391,7 +391,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
         <input type="password" id="pos-token" placeholder="Paste your access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
       </div>
       <div>
-        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
+        <label id="pos-location-label" style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
         <input type="text" id="pos-location" placeholder="Location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
@@ -1428,7 +1428,7 @@ async function loadBillingData() {
   let data;
   try {
     ({ data } = await sb.from('ot_restaurants')
-      .select('plan, plan_price, minutes_included, minutes_used, overage_rate, pos_type, pos_connected, pos_location_id, billing_period_start')
+      .select('plan, plan_price, minutes_included, minutes_used, overage_rate, pos_type, pos_connected, pos_location_id, pos_restaurant_guid, billing_period_start')
       .eq('id', RESTAURANT_ID).single());
   } catch (e) { data = null; }
   if (!data) return;
@@ -1465,7 +1465,7 @@ function hydratePosUI(data) {
   const locInput = document.getElementById('pos-location');
   if (!badge) return;
   if (typeSel && data.pos_type) typeSel.value = data.pos_type;
-  if (locInput && data.pos_location_id) locInput.value = data.pos_location_id;
+  if (locInput) locInput.value = (data.pos_type === 'toast' ? data.pos_restaurant_guid : data.pos_location_id) || '';
   renderPosInstructions();
   if (data.pos_connected) {
     badge.textContent = 'Connected' + (data.pos_type ? ' · ' + data.pos_type : '');
@@ -1516,8 +1516,11 @@ const POS_INSTRUCTIONS = {
 function renderPosInstructions() {
   const type = document.getElementById('pos-type').value;
   const el = document.getElementById('pos-instructions');
-  if (!el) return;
-  el.innerHTML = POS_INSTRUCTIONS[type] || 'Choose your POS above to see step-by-step connection instructions.';
+  const lbl = document.getElementById('pos-location-label');
+  const loc = document.getElementById('pos-location');
+  if (lbl) lbl.textContent = type === 'toast' ? 'RESTAURANT GUID' : 'LOCATION ID';
+  if (loc) loc.placeholder = type === 'toast' ? 'Toast Restaurant GUID' : 'Location ID';
+  if (el) el.innerHTML = POS_INSTRUCTIONS[type] || 'Choose your POS above to see step-by-step connection instructions.';
 }
 
 async function savePosConnection() {
@@ -1527,12 +1530,16 @@ async function savePosConnection() {
   if (!type) { showToast('Choose a POS system'); return; }
   if (type === 'clover') { showToast('Clover support is coming soon'); return; }
   if (type !== 'square' && type !== 'toast') { showToast('Unsupported POS'); return; }
-  if (!token || !location) { showToast('Enter both the access token and location ID'); return; }
-  const update = { pos_type: type, pos_system: type, pos_access_token: token, pos_location_id: location, pos_connected: true };
+  if (!token || !location) { showToast('Enter both the access token and ' + (type === 'toast' ? 'restaurant GUID' : 'location ID')); return; }
+  // Square stores the location in pos_location_id; Toast stores the restaurant GUID
+  // in pos_restaurant_guid (the order function reads the right field per pos_type).
+  const update = { pos_type: type, pos_system: type, pos_access_token: token, pos_connected: true };
+  if (type === 'square') { update.pos_location_id = location; update.pos_restaurant_guid = null; }
+  else { update.pos_restaurant_guid = location; update.pos_location_id = null; }
   const { error } = await sb.from('ot_restaurants').update(update).eq('id', RESTAURANT_ID);
   if (error) { showToast('Could not connect — try again'); return; }
   document.getElementById('pos-token').value = '';
-  hydratePosUI({ pos_connected: true, pos_type: type, pos_location_id: location });
+  hydratePosUI({ pos_connected: true, pos_type: type, pos_location_id: update.pos_location_id, pos_restaurant_guid: update.pos_restaurant_guid });
   showToast('POS connected!');
 }
 
