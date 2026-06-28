@@ -379,27 +379,27 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <div style="display:grid;gap:10px;max-width:520px">
       <div>
         <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">POS SYSTEM</label>
-        <select id="pos-type" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+        <select id="pos-type" onchange="renderPosInstructions()" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
           <option value="">— Select —</option>
           <option value="square">Square</option>
-          <option value="toast">Toast (coming soon)</option>
+          <option value="toast">Toast</option>
           <option value="clover">Clover (coming soon)</option>
         </select>
       </div>
       <div>
         <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">ACCESS TOKEN</label>
-        <input type="password" id="pos-token" placeholder="Paste your Square access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+        <input type="password" id="pos-token" placeholder="Paste your access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
       </div>
       <div>
         <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
-        <input type="text" id="pos-location" placeholder="Square location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+        <input type="text" id="pos-location" placeholder="Location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button onclick="savePosConnection()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Connect POS</button>
         <button onclick="disconnectPos()" id="pos-disconnect-btn" style="display:none;background:var(--card2);color:var(--red);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Disconnect</button>
       </div>
-      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-top:4px">
-        In Square: Developer Dashboard → your application → <strong style="color:var(--text)">Production Access Token</strong>, and Locations → <strong style="color:var(--text)">Location ID</strong>. We store these securely against your restaurant.
+      <div id="pos-instructions" style="font-size:11px;color:var(--text2);line-height:1.7;margin-top:4px">
+        Choose your POS above to see step-by-step connection instructions.
       </div>
     </div>
   </div>
@@ -1072,9 +1072,13 @@ async function saveCustomHours() {
 function renderForwardToHint() {
   const el = document.getElementById('forwardToHint');
   if (!el) return;
-  el.innerHTML = FORWARD_TO_NUMBER
-    ? `Your OrderTaker agent number is <strong style="color:var(--text)">${FORWARD_TO_NUMBER}</strong>.`
+  const fwd = (document.getElementById('forwardNumberInput')?.value || '').trim();
+  const agentLine = FORWARD_TO_NUMBER
+    ? `Your OrderTaker agent number is <strong style="color:var(--text)">${FORWARD_TO_NUMBER}</strong>. `
     : '';
+  el.innerHTML = fwd
+    ? `<span style="color:var(--green);font-weight:700">✓ Automatic fallback active.</span> Calls forward to this number automatically whenever the agent is off-hours or can't resolve a request. ${agentLine}`
+    : `Add a number so calls automatically reach staff when the agent is off or can't help. ${agentLine}`;
 }
 
 async function saveForwardNumber() {
@@ -1083,6 +1087,7 @@ async function saveForwardNumber() {
   const formatted = !raw ? null : (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
   const { error } = await sb.from('ot_restaurants').update({ forward_number: formatted }).eq('id', RESTAURANT_ID);
   if (error) { showToast('Could not save — try again'); return; }
+  renderForwardToHint();
   showToast(formatted ? 'Fallback number saved!' : 'Fallback number cleared');
 }
 
@@ -1337,7 +1342,7 @@ const CHECKLIST_STEPS = [
   },
   {
     id: 'forward', icon: '↩️', title: 'Forward Your Calls',
-    body: `Forward calls to your OrderTaker agent so it can answer for you. <strong style="color:var(--text)">Conditional forwarding</strong> (recommended) only forwards when you're busy or don't pick up — you keep using your normal line.<br><br>
+    body: `<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:12px;color:var(--text)">📞 <strong>We'll provide your OrderTaker phone number once you sign up</strong> — it appears in the Agent Schedule panel and below. Forward your calls to it.</div>Forward calls to your OrderTaker agent so it can answer for you. <strong style="color:var(--text)">Conditional forwarding</strong> (recommended) only forwards when you're busy or don't pick up — you keep using your normal line.<br><br>
       Forward your calls to: <code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:13px;letter-spacing:1px;color:var(--accent)">{{AGENT_NUMBER}}</code><br><br>
       Dial from your restaurant phone:
       <div style="margin:8px 0 0;font-size:12px;color:var(--text2);line-height:1.9">
@@ -1461,6 +1466,7 @@ function hydratePosUI(data) {
   if (!badge) return;
   if (typeSel && data.pos_type) typeSel.value = data.pos_type;
   if (locInput && data.pos_location_id) locInput.value = data.pos_location_id;
+  renderPosInstructions();
   if (data.pos_connected) {
     badge.textContent = 'Connected' + (data.pos_type ? ' · ' + data.pos_type : '');
     badge.style.background = 'rgba(74,222,128,0.1)';
@@ -1502,12 +1508,25 @@ async function loadCycleUsage(data) {
   } catch { document.getElementById('usage-orders').textContent = '0'; }
 }
 
+const POS_INSTRUCTIONS = {
+  square: `<strong style="color:var(--text)">Connect Square:</strong><br>1. Go to <strong>developer.squareup.com/apps</strong> and open (or create) your application.<br>2. Under <strong>Credentials</strong>, copy your <strong style="color:var(--text)">Production Access Token</strong> → paste above.<br>3. Under <strong>Locations</strong>, copy your <strong style="color:var(--text)">Location ID</strong> → paste above.<br>4. Click Connect POS. New orders push to Square automatically.`,
+  toast: `<strong style="color:var(--text)">Connect Toast:</strong><br>1. In <strong>Toast Web → Integrations → Toast API access</strong>, request/enable API access for your restaurant.<br>2. Copy your <strong style="color:var(--text)">API access token</strong> (or the credentials Toast provides) → paste above.<br>3. Copy your <strong style="color:var(--text)">Restaurant GUID / Location ID</strong> → paste in Location ID above.<br>4. Click Connect POS. New orders push to Toast automatically.`,
+  clover: `Clover support is coming soon. For now you can connect Square or Toast.`
+};
+function renderPosInstructions() {
+  const type = document.getElementById('pos-type').value;
+  const el = document.getElementById('pos-instructions');
+  if (!el) return;
+  el.innerHTML = POS_INSTRUCTIONS[type] || 'Choose your POS above to see step-by-step connection instructions.';
+}
+
 async function savePosConnection() {
   const type = document.getElementById('pos-type').value;
   const token = document.getElementById('pos-token').value.trim();
   const location = document.getElementById('pos-location').value.trim();
   if (!type) { showToast('Choose a POS system'); return; }
-  if (type !== 'square') { showToast('Only Square is available right now'); return; }
+  if (type === 'clover') { showToast('Clover support is coming soon'); return; }
+  if (type !== 'square' && type !== 'toast') { showToast('Unsupported POS'); return; }
   if (!token || !location) { showToast('Enter both the access token and location ID'); return; }
   const update = { pos_type: type, pos_system: type, pos_access_token: token, pos_location_id: location, pos_connected: true };
   const { error } = await sb.from('ot_restaurants').update(update).eq('id', RESTAURANT_ID);
