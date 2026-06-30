@@ -135,7 +135,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 <div id="dash-tabs" style="background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0">
   <button class="dash-tab active" onclick="switchTab('orders')" id="tab-btn-orders">📦 Orders</button>
   <button class="dash-tab" onclick="switchTab('billing')" id="tab-btn-billing">💳 Plan &amp; Billing</button>
-  <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
+  <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Calls &amp; Orders Logs</button>
   <button class="dash-tab" onclick="switchTab('checklist')" id="tab-btn-checklist">✅ Setup Checklist</button>
   <button class="dash-tab" onclick="switchTab('kitchen')" id="tab-btn-kitchen">🍳 Kitchen View</button>
   <button class="dash-tab" onclick="switchTab('menu')" id="tab-btn-menu">📋 Menu &amp; POS</button>
@@ -378,11 +378,12 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 <div id="panel-calls" style="display:none;padding:24px;max-width:1000px;margin:0 auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
     <div>
-      <div style="font-size:18px;font-weight:800;color:var(--text)">Recent Call Logs</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:4px">All inbound calls handled by your AI agent</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">Calls &amp; Orders Logs</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">Inbound AI calls and your completed/past orders</div>
     </div>
-    <button onclick="loadCallLogs()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">↻ Refresh</button>
+    <button onclick="loadCallLogs();loadOrdersLog()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">↻ Refresh</button>
   </div>
+  <div style="font-size:13px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:10px">📞 CALL LOGS</div>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>
@@ -399,7 +400,35 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </table>
   </div>
   <div id="call-log-summary" style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap"></div>
+
+  <!-- COMPLETED / PAST ORDERS -->
+  <div style="font-size:13px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin:28px 0 10px">🧾 COMPLETED &amp; PAST ORDERS</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">TIME</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">CUSTOMER</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">TYPE</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">PAYMENT</th>
+          <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px">TOTAL</th>
+          <th style="padding:12px 16px"></th>
+        </tr>
+      </thead>
+      <tbody id="orders-log-body">
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2)">Loading orders…</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div><!-- end panel-calls -->
+
+<!-- PAST ORDER DETAIL MODAL -->
+<div id="order-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;padding:24px">
+    <button onclick="closeOrderDetail()" style="position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
+    <div id="order-detail-body"></div>
+  </div>
+</div>
 
 <!-- SETUP CHECKLIST PANEL -->
 <div id="panel-checklist" style="display:none;padding:24px;max-width:640px;margin:0 auto">
@@ -1417,7 +1446,7 @@ function switchTab(tab) {
   document.getElementById('panel-menu').style.display = tab === 'menu' ? 'block' : 'none';
   document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.id === 'tab-btn-' + tab));
   if (tab === 'billing') loadBillingData();
-  if (tab === 'calls') loadCallLogs();
+  if (tab === 'calls') { loadCallLogs(); loadOrdersLog(); }
   if (tab === 'checklist') renderChecklist();
   if (tab === 'menu') { loadMenuItems(); loadPosState(); }
   if (tab === 'kitchen') loadKitchen();
@@ -1532,6 +1561,75 @@ async function loadCallLogs() {
       <span style="font-weight:800;color:var(--text);margin-left:8px">${v}</span>
     </div>`).join('');
 }
+
+// ── COMPLETED / PAST ORDERS LOG ──────────────────────────────────────────
+let PAST_ORDERS = [];
+async function loadOrdersLog() {
+  if (!RESTAURANT_ID) return;
+  const tbody = document.getElementById('orders-log-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2)">Loading…</td></tr>';
+  let data;
+  try {
+    ({ data } = await sb.from('ot_orders')
+      .select('*')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .in('status', ['completed', 'cancelled'])
+      .order('created_at', { ascending: false })
+      .limit(100));
+  } catch (e) { data = null; }
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2)">No completed orders yet.</td></tr>';
+    return;
+  }
+  PAST_ORDERS = data;
+  tbody.innerHTML = data.map(o => {
+    const dt = new Date(o.created_at);
+    const time = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const pm = (o.payment_method || '').toLowerCase();
+    const pmLabel = pm === 'cash' ? '💵 Cash' : (pm ? '💳 Card' : '—');
+    const statusColor = o.status === 'cancelled' ? 'var(--red)' : 'var(--green)';
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:12px 16px;color:var(--text2);white-space:nowrap">${time}</td>
+      <td style="padding:12px 16px"><div style="font-weight:700">${escapeHtml(o.customer_name || 'Guest')}</div><div style="font-size:11px;color:var(--text2)">${escapeHtml(o.customer_phone ? fmtPhone(o.customer_phone) : '')}</div></td>
+      <td style="padding:12px 16px"><span style="text-transform:capitalize">${escapeHtml(o.order_type || '—')}</span> · <span style="color:${statusColor};font-weight:700;text-transform:capitalize">${o.status}</span></td>
+      <td style="padding:12px 16px">${pmLabel}</td>
+      <td style="padding:12px 16px;text-align:right;font-weight:800">$${Number(o.total || o.total_amount || 0).toFixed(2)}</td>
+      <td style="padding:12px 16px;text-align:right"><button onclick="openOrderDetail('${o.id}')" style="background:var(--card2);border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function openOrderDetail(id) {
+  const o = PAST_ORDERS.find(x => x.id === id);
+  if (!o) return;
+  let items = [];
+  try {
+    const { data } = await sb.from('ot_order_items').select('*').eq('order_id', id);
+    items = data || [];
+  } catch (e) {}
+  const dt = new Date(o.created_at);
+  const pm = (o.payment_method || '').toLowerCase();
+  const pmLabel = pm === 'cash' ? '💵 Cash' : (pm ? '💳 Card' : '—');
+  const itemsHtml = items.length
+    ? items.map(it => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>${it.quantity ? it.quantity + '× ' : ''}${escapeHtml(it.item_name || it.name || 'Item')}</span><span style="color:var(--text2)">$${Number(it.line_total || it.unit_price || 0).toFixed(2)}</span></div>`).join('')
+    : '<div style="color:var(--text2);font-size:13px">No line items recorded.</div>';
+  document.getElementById('order-detail-body').innerHTML = `
+    <div style="font-size:11px;color:var(--accent);font-weight:800;letter-spacing:1px;margin-bottom:4px">ORDER${o.order_number ? ' #' + o.order_number : ''} · ${o.status.toUpperCase()}</div>
+    <div style="font-size:22px;font-weight:900;margin-bottom:2px">${escapeHtml(o.customer_name || 'Guest')}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${o.customer_phone ? '📞 ' + escapeHtml(fmtPhone(o.customer_phone)) + ' · ' : ''}${dt.toLocaleString()}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <span style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;text-transform:capitalize">${escapeHtml(o.order_type || 'order')}</span>
+      <span style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700">${pmLabel}</span>
+    </div>
+    ${o.delivery_address ? `<div style="font-size:13px;color:var(--text2);margin-bottom:12px">🏠 ${escapeHtml(o.delivery_address)}</div>` : ''}
+    <div style="font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:6px">ITEMS</div>
+    <div style="margin-bottom:14px">${itemsHtml}</div>
+    ${o.special_instructions ? `<div style="font-size:13px;color:var(--text2);margin-bottom:12px"><strong style="color:var(--text)">Notes:</strong> ${escapeHtml(o.special_instructions)}</div>` : ''}
+    <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;border-top:1px solid var(--border);padding-top:12px"><span>Total</span><span style="color:var(--accent)">$${Number(o.total || o.total_amount || 0).toFixed(2)}</span></div>`;
+  document.getElementById('order-detail-modal').style.display = 'flex';
+}
+function closeOrderDetail() { document.getElementById('order-detail-modal').style.display = 'none'; }
 
 async function loadBillingData() {
   if (!RESTAURANT_ID) return;
