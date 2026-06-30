@@ -138,7 +138,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <button class="dash-tab" onclick="switchTab('calls')" id="tab-btn-calls">📞 Call Logs</button>
   <button class="dash-tab" onclick="switchTab('checklist')" id="tab-btn-checklist">✅ Setup Checklist</button>
   <button class="dash-tab" onclick="switchTab('kitchen')" id="tab-btn-kitchen">🍳 Kitchen View</button>
-  <button class="dash-tab" onclick="switchTab('menu')" id="tab-btn-menu">📋 Menu</button>
+  <button class="dash-tab" onclick="switchTab('menu')" id="tab-btn-menu">📋 Menu &amp; POS</button>
 </div>
 
 <div id="panel-orders">
@@ -325,25 +325,25 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <div class="billing-plan-card" data-plan="starter" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">STARTER</div>
       <div style="font-size:24px;font-weight:900">$199<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">1,000 min · $0.20/min overage<br>Pickup only · 2 staff numbers</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">1,000 min · $0.20/min overage<br>Pickup only · 2 staff numbers · 3 alert emails</div>
       <a href="https://buy.stripe.com/00wcMY5LK9bLcd39cv18c05" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--border);color:var(--text2)">Get Starter</a>
     </div>
     <div class="billing-plan-card" data-plan="pro" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:8px">PRO — MOST POPULAR</div>
       <div style="font-size:24px;font-weight:900">$299<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">2,000 min · $0.20/min overage<br>All order types · 5 staff numbers</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">2,000 min · $0.20/min overage<br>All order types · 5 staff numbers · 6 alert emails</div>
       <a href="https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--accent);color:#1a0a00">Upgrade to Pro</a>
     </div>
     <div class="billing-plan-card" data-plan="business" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">BUSINESS</div>
       <div style="font-size:24px;font-weight:900">$499<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">3,500 min · $0.15/min overage<br>Square POS · 10 staff numbers</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">3,500 min · $0.15/min overage<br>Square + Toast POS · 10 staff numbers · 15 alert emails</div>
       <a href="https://buy.stripe.com/5kQ28kdec2Nn3Gx2O718c06" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Upgrade to Business</a>
     </div>
     <div class="billing-plan-card" data-plan="enterprise" style="background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px">
       <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">ENTERPRISE</div>
       <div style="font-size:24px;font-weight:900">$799<span style="font-size:12px;color:var(--text2);font-weight:400">/mo</span></div>
-      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">6,000 min · $0.15/min overage<br>Toast/Clover · Unlimited staff · 2hr SLA</div>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 14px;line-height:1.6">6,000 min · $0.15/min overage<br>Square + Toast POS · 20 staff numbers · 30 alert emails · 2hr SLA</div>
       <a href="https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07" target="_blank" rel="noopener" class="billing-plan-btn" style="display:block;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;background:var(--card2);border:1px solid var(--accent);color:var(--accent)">Get Enterprise</a>
     </div>
   </div>
@@ -369,44 +369,6 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;margin-bottom:6px">ORDERS THIS CYCLE</div>
       <div style="font-size:24px;font-weight:900" id="usage-orders">—</div>
       <div style="font-size:11px;color:var(--text2)">captured by your agent</div>
-    </div>
-  </div>
-
-  <!-- Connect your POS -->
-  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">POS INTEGRATION</div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-      <div>
-        <div style="font-size:15px;font-weight:800">Connect your POS</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:3px">When connected, every order the agent captures is pushed straight to your POS.</div>
-      </div>
-      <span id="pos-status-badge" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:var(--card2);color:var(--text2);border:1px solid var(--border)">Not connected</span>
-    </div>
-    <div style="display:grid;gap:10px;max-width:520px">
-      <div>
-        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">POS SYSTEM</label>
-        <select id="pos-type" onchange="renderPosInstructions()" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
-          <option value="">— Select —</option>
-          <option value="square">Square</option>
-          <option value="toast">Toast</option>
-          <option value="clover">Clover (coming soon)</option>
-        </select>
-      </div>
-      <div>
-        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">ACCESS TOKEN</label>
-        <input type="password" id="pos-token" placeholder="Paste your access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
-      </div>
-      <div>
-        <label id="pos-location-label" style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
-        <input type="text" id="pos-location" placeholder="Location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
-      </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button onclick="savePosConnection()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Connect POS</button>
-        <button onclick="disconnectPos()" id="pos-disconnect-btn" style="display:none;background:var(--card2);color:var(--red);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Disconnect</button>
-      </div>
-      <div id="pos-instructions" style="font-size:11px;color:var(--text2);line-height:1.7;margin-top:4px">
-        Choose your POS above to see step-by-step connection instructions.
-      </div>
     </div>
   </div>
 
@@ -482,6 +444,45 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
 <!-- MENU PANEL -->
 <div id="panel-menu" style="display:none;padding:24px;max-width:760px;margin:0 auto">
+
+  <!-- Connect your POS -->
+  <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">POS INTEGRATION</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+      <div>
+        <div style="font-size:15px;font-weight:800">Connect your POS</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">When connected, every order the agent captures is pushed straight to your POS.</div>
+      </div>
+      <span id="pos-status-badge" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:var(--card2);color:var(--text2);border:1px solid var(--border)">Not connected</span>
+    </div>
+    <div style="display:grid;gap:10px;max-width:520px">
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">POS SYSTEM</label>
+        <select id="pos-type" onchange="renderPosInstructions()" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+          <option value="">— Select —</option>
+          <option value="square">Square</option>
+          <option value="toast">Toast</option>
+          <option value="clover">Clover (coming soon)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">ACCESS TOKEN</label>
+        <input type="password" id="pos-token" placeholder="Paste your access token" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+      </div>
+      <div>
+        <label id="pos-location-label" style="display:block;font-size:11px;color:var(--text2);font-weight:700;margin-bottom:4px">LOCATION ID</label>
+        <input type="text" id="pos-location" placeholder="Location ID" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button onclick="savePosConnection()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Connect POS</button>
+        <button onclick="disconnectPos()" id="pos-disconnect-btn" style="display:none;background:var(--card2);color:var(--red);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Disconnect</button>
+      </div>
+      <div id="pos-instructions" style="font-size:11px;color:var(--text2);line-height:1.7;margin-top:4px">
+        Choose your POS above to see step-by-step connection instructions.
+      </div>
+    </div>
+  </div>
+
   <div style="font-size:18px;font-weight:800;margin-bottom:4px">Your Menu</div>
   <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Upload a file and your AI agent learns every item instantly. Or add items manually below.</div>
 
@@ -1406,8 +1407,18 @@ function switchTab(tab) {
   if (tab === 'billing') loadBillingData();
   if (tab === 'calls') loadCallLogs();
   if (tab === 'checklist') renderChecklist();
-  if (tab === 'menu') loadMenuItems();
+  if (tab === 'menu') { loadMenuItems(); loadPosState(); }
   if (tab === 'kitchen') loadKitchen();
+}
+
+async function loadPosState() {
+  if (!RESTAURANT_ID) return;
+  try {
+    const { data } = await sb.from('ot_restaurants')
+      .select('pos_type, pos_connected, pos_location_id, pos_restaurant_guid')
+      .eq('id', RESTAURANT_ID).single();
+    if (data) hydratePosUI(data);
+  } catch (e) { /* leave default 'Not connected' state */ }
 }
 
 // ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
@@ -1804,6 +1815,15 @@ async function init() {
     showToast('Setting up your restaurant… please refresh in a moment.');
     return;
   }
+
+  // App-root auth: session read once on mount (above); subscribe to auth changes so
+  // a sign-out (here or in another tab) / token loss returns the user to login and the
+  // header stays in sync. Single source of truth (_currentUser); no per-component checks.
+  sb.auth.onAuthStateChange((event, s) => {
+    if (event === 'SIGNED_OUT' || !s) { window.location.replace('signup.html'); return; }
+    _currentUser = s.user;
+    patchBillingLinks(s.user);
+  });
 
   // Run each loader independently — one failure must never block the others
   // (that was leaving Reservations / Staff / Spam / usage stuck on "Loading…").
