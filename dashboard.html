@@ -418,9 +418,14 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px">🍳 Kitchen Display</div>
       <div style="font-size:13px;color:var(--text2);margin-top:3px">Live order queue — visible from across the kitchen</div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
-      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
-      LIVE
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Alerts: Off</button>
+      <button onclick="testKitchenSound()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Test sound</button>
+      <button id="kitchen-ack-btn" onclick="stopRinging()" style="display:none;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;animation:pulse 1s infinite">⏹ New order — tap to silence</button>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
+        LIVE
+      </div>
     </div>
   </div>
   <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
@@ -1844,12 +1849,110 @@ async function init() {
 
   if (!localStorage.getItem('ot_onboarding_done')) setTimeout(showOnboarding, 800);
 
+  updateAlertToggleUI();
   sb.channel('ot_orders_changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ot_orders', filter: `restaurant_id=eq.${RESTAURANT_ID}` },
-      () => { loadOrders(); loadStats(); if (document.getElementById('panel-kitchen').style.display !== 'none') loadKitchen(); })
+      (payload) => {
+        loadOrders(); loadStats();
+        if (kitchenVisible()) loadKitchen();
+        if (payload.eventType === 'INSERT') onNewOrder(payload.new);  // device alert
+      })
     .subscribe();
 
-  setInterval(() => { loadOrders(); if (document.getElementById('panel-kitchen').style.display !== 'none') loadKitchen(); }, 30000);
+  setInterval(() => { loadOrders(); if (kitchenVisible()) loadKitchen(); }, 30000);
+}
+
+// ── KITCHEN NEW-ORDER ALERT (device-side: sound + web notification) ──────────
+// Separate from the SMS/email staff alerts. Rings the device running the kitchen view.
+let _kAlertOn = localStorage.getItem('ot_kitchen_alert') === '1';
+let _kAudioCtx = null, _kRingTimer = null;
+const _kSeenOrderIds = new Set();
+
+function kitchenVisible() { return document.getElementById('panel-kitchen').style.display !== 'none'; }
+
+function updateAlertToggleUI() {
+  const b = document.getElementById('kitchen-alert-toggle');
+  if (!b) return;
+  b.textContent = _kAlertOn ? '🔔 Alerts: On' : '🔔 Alerts: Off';
+  b.style.background = _kAlertOn ? 'var(--accent)' : 'var(--card2)';
+  b.style.color = _kAlertOn ? '#1a0a00' : 'var(--text2)';
+  b.style.borderColor = _kAlertOn ? 'var(--accent)' : 'var(--border)';
+}
+
+function ensureAudio() {
+  try {
+    if (!_kAudioCtx) _kAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_kAudioCtx.state === 'suspended') _kAudioCtx.resume();
+  } catch (e) {}
+  return _kAudioCtx;
+}
+
+function playBeep() {
+  const ctx = ensureAudio(); if (!ctx) return;
+  [0, 0.18].forEach((t, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.value = i === 0 ? 880 : 1175;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+    g.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.16);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.17);
+  });
+}
+
+function testKitchenSound() {
+  ensureAudio(); playBeep();
+  if (!_kAlertOn) showToast('That’s the alert sound — turn Alerts On to ring on new orders.');
+}
+
+async function toggleKitchenAlerts() {
+  _kAlertOn = !_kAlertOn;
+  localStorage.setItem('ot_kitchen_alert', _kAlertOn ? '1' : '0');
+  updateAlertToggleUI();
+  if (_kAlertOn) {
+    ensureAudio(); playBeep();  // user gesture unlocks audio for later auto-rings
+    if ('Notification' in window && Notification.permission === 'default') {
+      try { await Notification.requestPermission(); } catch (e) {}
+    }
+    showToast('Kitchen alerts ON — this device rings on new orders');
+  } else {
+    stopRinging();
+    showToast('Kitchen alerts off');
+  }
+}
+
+function startRinging(order) {
+  if (!_kAlertOn) return;
+  stopRinging();
+  const ack = document.getElementById('kitchen-ack-btn');
+  if (ack) ack.style.display = '';
+  playBeep();
+  _kRingTimer = setInterval(playBeep, 2000);          // repeat until acknowledged
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const n = new Notification('🍽️ New order — ' + (order.customer_name || 'Guest'), {
+        body: (order.order_type || 'order').toUpperCase()
+          + (order.total ? ' · $' + Number(order.total).toFixed(2) : '')
+          + (order.customer_phone ? ' · ' + order.customer_phone : ''),
+        tag: 'ot-order-' + order.id, renotify: true
+      });
+      n.onclick = () => { window.focus(); stopRinging(); };
+    } catch (e) {}
+  }
+  setTimeout(stopRinging, 60000);  // safety: never ring forever if unattended
+}
+
+function stopRinging() {
+  if (_kRingTimer) { clearInterval(_kRingTimer); _kRingTimer = null; }
+  const ack = document.getElementById('kitchen-ack-btn');
+  if (ack) ack.style.display = 'none';
+}
+
+function onNewOrder(order) {
+  if (!order || _kSeenOrderIds.has(order.id)) return;
+  _kSeenOrderIds.add(order.id);
+  if (kitchenVisible()) loadKitchen();
+  startRinging(order);
 }
 
 init();
