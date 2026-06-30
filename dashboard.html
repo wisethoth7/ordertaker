@@ -1194,27 +1194,68 @@ function showToast(msg) {
 let staffPhones = [];
 let alertEmails = [];
 
+// Staff lists are JSONB arrays of { value, active }. A toggled-OFF entry stops
+// receiving messages (backend respects active=false). DB limit columns win.
+let _staffPhoneLimit = null, _staffEmailLimit = null;
+
+function normalizeStaffList(jsonbList, legacyArr) {
+  if (Array.isArray(jsonbList) && jsonbList.length) {
+    return jsonbList.map(x => (typeof x === 'string')
+      ? { value: x, active: true }
+      : { value: x.value, active: x.active !== false });
+  }
+  return (legacyArr || []).map(v => ({ value: v, active: true }));
+}
+function phoneLimit() { return (_staffPhoneLimit != null) ? _staffPhoneLimit : (PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.starter).phoneLimit; }
+function emailLimit() { return (_staffEmailLimit != null) ? _staffEmailLimit : (PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.starter).emailLimit; }
+
 async function loadStaffNumbers() {
   if (!RESTAURANT_ID) return;
-  let data, error;
+  let data;
   try {
-    ({ data, error } = await sb.from('ot_restaurants')
-      .select('staff_phones, alert_emails, alert_email')
+    ({ data } = await sb.from('ot_restaurants')
+      .select('staff_phone_list, staff_email_list, staff_phones, alert_emails, alert_email, staff_phone_limit, staff_email_limit, plan')
       .eq('id', RESTAURANT_ID).single());
-  } catch (e) { error = e; }
+  } catch (e) { data = null; }
 
-  if (error || !data) {
-    staffPhones = []; alertEmails = [];
-    renderStaffPhones(); renderAlertEmails();
-    return;
-  }
-  staffPhones = data.staff_phones || [];
-  // Prefer the new array; fall back to the legacy single alert_email
-  alertEmails = (data.alert_emails && data.alert_emails.length)
-    ? data.alert_emails
-    : (data.alert_email ? [data.alert_email] : []);
+  if (!data) { staffPhones = []; alertEmails = []; renderStaffPhones(); renderAlertEmails(); return; }
+  if (data.plan) currentPlanKey = data.plan;
+  _staffPhoneLimit = data.staff_phone_limit;
+  _staffEmailLimit = data.staff_email_limit;
+
+  staffPhones = normalizeStaffList(data.staff_phone_list, data.staff_phones);
+  alertEmails = normalizeStaffList(
+    data.staff_email_list,
+    (data.alert_emails && data.alert_emails.length) ? data.alert_emails : (data.alert_email ? [data.alert_email] : [])
+  );
   renderStaffPhones();
   renderAlertEmails();
+}
+
+function staffToggle(kind, i, active) {
+  return `<div onclick="toggle${kind}(${i})" title="${active ? 'Turn off alerts' : 'Turn on alerts'}"
+    style="width:42px;height:24px;border-radius:12px;background:${active ? 'var(--accent)' : 'var(--border)'};cursor:pointer;position:relative;flex-shrink:0">
+    <div style="position:absolute;top:2px;left:${active ? '20px' : '2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div></div>`;
+}
+
+function renderStaffPhones() {
+  const list = document.getElementById('staffPhonesList');
+  if (!list) return;
+  if (!staffPhones.length) {
+    list.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No numbers yet — add one to get SMS alerts for every order.</div>';
+    return;
+  }
+  list.innerHTML = staffPhones.map((p, i) => `
+    <div class="staff-phone-row" style="${p.active ? '' : 'opacity:.5'}">
+      <div>
+        <div style="font-size:14px;font-weight:700">${escapeHtml(p.value)}</div>
+        <div style="font-size:11px;color:var(--text2)">${p.active ? 'Receiving SMS alerts' : 'Paused — no alerts'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${staffToggle('StaffPhone', i, p.active)}
+        <button onclick="removeStaffPhone(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
+      </div>
+    </div>`).join('');
 }
 
 function renderAlertEmails() {
@@ -1225,51 +1266,25 @@ function renderAlertEmails() {
     return;
   }
   list.innerHTML = alertEmails.map((e, i) => `
-    <div class="staff-phone-row">
+    <div class="staff-phone-row" style="${e.active ? '' : 'opacity:.5'}">
       <div>
-        <div style="font-size:14px;font-weight:700;word-break:break-all">${e}</div>
-        <div style="font-size:11px;color:var(--text2)">Email alerts: new orders, reservations, callbacks</div>
+        <div style="font-size:14px;font-weight:700;word-break:break-all">${escapeHtml(e.value)}</div>
+        <div style="font-size:11px;color:var(--text2)">${e.active ? 'Receiving email alerts' : 'Paused — no alerts'}</div>
       </div>
-      <button onclick="removeAlertEmail(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${staffToggle('AlertEmail', i, e.active)}
+        <button onclick="removeAlertEmail(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
+      </div>
     </div>`).join('');
 }
 
-async function addAlertEmail() {
-  const input = document.getElementById('alertEmailInput');
-  const email = input.value.trim().toLowerCase();
-  if (!email || !email.includes('@') || !email.includes('.')) { showToast('Enter a valid email address'); return; }
-  if (alertEmails.includes(email)) { showToast('Email already added'); return; }
-  alertEmails.push(email);
-  const { error } = await sb.from('ot_restaurants')
-    .update({ alert_emails: alertEmails, alert_email: alertEmails[0] }).eq('id', RESTAURANT_ID);
-  if (error) { alertEmails.pop(); showToast('Could not save — try again'); return; }
-  input.value = '';
-  renderAlertEmails();
-  showToast('Alert email added!');
+async function saveStaffPhones() {
+  const active = staffPhones.filter(p => p.active).map(p => p.value);
+  return sb.from('ot_restaurants').update({ staff_phone_list: staffPhones, staff_phones: active }).eq('id', RESTAURANT_ID);
 }
-
-async function removeAlertEmail(index) {
-  alertEmails.splice(index, 1);
-  await sb.from('ot_restaurants')
-    .update({ alert_emails: alertEmails, alert_email: alertEmails[0] || null }).eq('id', RESTAURANT_ID);
-  renderAlertEmails();
-  showToast('Email removed');
-}
-
-function renderStaffPhones() {
-  const list = document.getElementById('staffPhonesList');
-  if (!staffPhones.length) {
-    list.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No numbers yet — add yours to get SMS alerts for every order.</div>';
-    return;
-  }
-  list.innerHTML = staffPhones.map((p, i) => `
-    <div class="staff-phone-row">
-      <div>
-        <div style="font-size:14px;font-weight:700">${p}</div>
-        <div style="font-size:11px;color:var(--text2)">SMS alerts: new orders, reservations, callbacks</div>
-      </div>
-      <button onclick="removeStaffPhone(${i})" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);padding:5px 10px;font-size:11px;cursor:pointer">Remove</button>
-    </div>`).join('');
+async function saveAlertEmails() {
+  const active = alertEmails.filter(e => e.active).map(e => e.value);
+  return sb.from('ot_restaurants').update({ staff_email_list: alertEmails, alert_emails: active, alert_email: active[0] || null }).eq('id', RESTAURANT_ID);
 }
 
 async function addStaffPhone() {
@@ -1277,36 +1292,70 @@ async function addStaffPhone() {
   const raw = input.value.replace(/\D/g, '');
   if (raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
   const formatted = (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
-  if (staffPhones.includes(formatted)) { showToast('Number already added'); return; }
-  const cfg = PLAN_CONFIG[currentPlanKey] || PLAN_CONFIG.pro;
-  if (cfg.staff_limit !== null && staffPhones.length >= cfg.staff_limit) {
-    showToast(`${cfg.name} plan allows up to ${cfg.staff_limit} staff numbers. Upgrade your plan to add more.`);
-    return;
+  if (staffPhones.some(p => p.value === formatted)) { showToast('Number already added'); return; }
+  const lim = phoneLimit();
+  if (lim != null && staffPhones.length >= lim) {
+    showToast(`Your plan allows up to ${lim} staff numbers. Upgrade to add more.`); return;
   }
-  staffPhones.push(formatted);
-  await sb.from('ot_restaurants').update({ staff_phones: staffPhones }).eq('id', RESTAURANT_ID);
+  staffPhones.push({ value: formatted, active: true });
+  const { error } = await saveStaffPhones();
+  if (error) { staffPhones.pop(); showToast('Could not save — try again'); return; }
   input.value = '';
   document.getElementById('addPhoneRow').style.display = 'none';
   renderStaffPhones();
   showToast('Staff number added!');
 }
-
-async function removeStaffPhone(index) {
-  staffPhones.splice(index, 1);
-  await sb.from('ot_restaurants').update({ staff_phones: staffPhones }).eq('id', RESTAURANT_ID);
+async function removeStaffPhone(i) {
+  staffPhones.splice(i, 1);
+  await saveStaffPhones();
   renderStaffPhones();
   showToast('Number removed');
+}
+async function toggleStaffPhone(i) {
+  staffPhones[i].active = !staffPhones[i].active;
+  renderStaffPhones();
+  await saveStaffPhones();
+  showToast(staffPhones[i].active ? 'Alerts on for this number' : 'Alerts paused for this number');
+}
+
+async function addAlertEmail() {
+  const input = document.getElementById('alertEmailInput');
+  const email = input.value.trim().toLowerCase();
+  if (!email || !email.includes('@') || !email.includes('.')) { showToast('Enter a valid email address'); return; }
+  if (alertEmails.some(e => e.value === email)) { showToast('Email already added'); return; }
+  const lim = emailLimit();
+  if (lim != null && alertEmails.length >= lim) {
+    showToast(`Your plan allows up to ${lim} alert emails. Upgrade to add more.`); return;
+  }
+  alertEmails.push({ value: email, active: true });
+  const { error } = await saveAlertEmails();
+  if (error) { alertEmails.pop(); showToast('Could not save — try again'); return; }
+  input.value = '';
+  renderAlertEmails();
+  showToast('Alert email added!');
+}
+async function removeAlertEmail(i) {
+  alertEmails.splice(i, 1);
+  await saveAlertEmails();
+  renderAlertEmails();
+  showToast('Email removed');
+}
+async function toggleAlertEmail(i) {
+  alertEmails[i].active = !alertEmails[i].active;
+  renderAlertEmails();
+  await saveAlertEmails();
+  showToast(alertEmails[i].active ? 'Alerts on for this email' : 'Alerts paused for this email');
 }
 
 // ── PLAN & BILLING ───────────────────────────────────────────────────────
 const PLAN_CONFIG = {
-  starter:    { name: 'Starter',    price: 199, minutes: 1000,  overage: 0.20, staff_limit: 2 },
-  pro:        { name: 'Pro',        price: 299, minutes: 2000,  overage: 0.20, staff_limit: 5 },
-  business:   { name: 'Business',   price: 499, minutes: 3500,  overage: 0.15, staff_limit: 10 },
-  enterprise: { name: 'Enterprise', price: 799, minutes: 6000,  overage: 0.15, staff_limit: null },
+  starter:    { name: 'Starter',    price: 199, minutes: 1000,  overage: 0.20, phoneLimit: 2,  emailLimit: 3 },
+  pro:        { name: 'Pro',        price: 299, minutes: 2000,  overage: 0.20, phoneLimit: 5,  emailLimit: 6 },
+  business:   { name: 'Business',   price: 499, minutes: 3500,  overage: 0.15, phoneLimit: 10, emailLimit: 15 },
+  enterprise: { name: 'Enterprise', price: 799, minutes: 6000,  overage: 0.15, phoneLimit: 20, emailLimit: 30 },
 };
 const PLAN_ORDER = ['starter', 'pro', 'business', 'enterprise'];
-let currentPlanKey = 'pro';
+let currentPlanKey = 'starter';
 
 function switchTab(tab) {
   document.getElementById('panel-orders').style.display = tab === 'orders' ? '' : 'none';
