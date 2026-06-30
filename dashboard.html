@@ -247,6 +247,12 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       <input type="tel" id="forwardNumberInput" placeholder="(732) 555-1234" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
       <button onclick="saveForwardNumber()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+      <div style="font-size:12px;color:var(--text2)">Auto-forward when the agent is off-hours or can't resolve</div>
+      <div id="autoForwardToggle" onclick="toggleAutoForward()" style="width:42px;height:24px;border-radius:12px;background:var(--accent);cursor:pointer;position:relative;flex-shrink:0">
+        <div style="position:absolute;top:2px;left:20px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div>
+      </div>
+    </div>
     <div id="forwardToHint" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
   </div>
 
@@ -1010,6 +1016,15 @@ let customHours = JSON.parse(JSON.stringify(BUSY_HOURS));
 let agentActive = true;
 let spamEnabled = true;
 let FORWARD_TO_NUMBER = '';
+let AUTO_FORWARD = true;
+
+async function toggleAutoForward() {
+  AUTO_FORWARD = !AUTO_FORWARD;
+  const t = document.getElementById('autoForwardToggle');
+  if (t) { t.style.background = AUTO_FORWARD ? 'var(--accent)' : 'var(--border)'; t.querySelector('div').style.left = AUTO_FORWARD ? '20px' : '2px'; }
+  await sb.from('ot_restaurants').update({ auto_forward_when_off: AUTO_FORWARD }).eq('id', RESTAURANT_ID);
+  showToast(AUTO_FORWARD ? 'Auto-forward ON' : 'Auto-forward OFF');
+}
 
 function setScheduleMode(mode) {
   currentMode = mode;
@@ -1085,7 +1100,9 @@ async function saveForwardNumber() {
   const raw = document.getElementById('forwardNumberInput').value.replace(/\D/g, '');
   if (raw && raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
   const formatted = !raw ? null : (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
-  const { error } = await sb.from('ot_restaurants').update({ forward_number: formatted }).eq('id', RESTAURANT_ID);
+  // Write fallback_number (new) + keep forward_number in sync for back-compat.
+  const { error } = await sb.from('ot_restaurants')
+    .update({ fallback_number: formatted, forward_number: formatted }).eq('id', RESTAURANT_ID);
   if (error) { showToast('Could not save — try again'); return; }
   renderForwardToHint();
   showToast(formatted ? 'Fallback number saved!' : 'Fallback number cleared');
@@ -1097,8 +1114,17 @@ async function saveScheduleToSupabase() {
   if (currentMode === 'always') hours = ALWAYS_HOURS;
   else if (currentMode === 'busy') hours = BUSY_HOURS;
   else hours = customHours;
+  // Persist Lunch and Dinner as SEPARATE windows; keep open_hours as the overall combined.
+  const lunch = {}, dinner = {};
+  DAYS.forEach(d => {
+    const h = hours[d] || {};
+    lunch[d]  = { open: h.open || '',  close: h.close || '',  enabled: h.enabled !== false };
+    dinner[d] = { open: h.open2 || '', close: h.close2 || '', enabled: h.enabled !== false && !!(h.open2 || h.close2) };
+  });
   await sb.from('ot_restaurants').update({
     open_hours: hours,
+    lunch_hours: lunch,
+    dinner_hours: dinner,
     agent_active: agentActive,
     spam_protection: spamEnabled
   }).eq('id', RESTAURANT_ID);
@@ -1136,7 +1162,7 @@ async function loadScheduleSettings() {
   let data, error;
   try {
     ({ data, error } = await sb.from('ot_restaurants')
-      .select('agent_active,spam_protection,open_hours,minutes_used,minutes_included,plan,forward_number,vapi_phone_number,twilio_phone,telnyx_phone')
+      .select('agent_active,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
       .eq('id', RESTAURANT_ID).single());
   } catch (e) { error = e; }
 
@@ -1158,15 +1184,27 @@ async function loadScheduleSettings() {
   spamTog.style.background = spamEnabled ? 'var(--accent)' : 'var(--border)';
   spamKnob.style.left = spamEnabled ? '20px' : '2px';
 
-  // Hydrate custom hours from saved open_hours (supports Lunch + Dinner windows)
-  if (data.open_hours && typeof data.open_hours === 'object') {
+  // Hydrate custom hours: prefer the separate Lunch/Dinner windows, else open_hours.
+  if ((data.lunch_hours && typeof data.lunch_hours === 'object') || (data.dinner_hours && typeof data.dinner_hours === 'object')) {
+    DAYS.forEach(d => {
+      const l = (data.lunch_hours || {})[d] || {};
+      const di = (data.dinner_hours || {})[d] || {};
+      customHours[d] = { ...customHours[d],
+        open:   l.open  || customHours[d].open,   close:  l.close  || customHours[d].close,
+        open2:  di.open || customHours[d].open2,  close2: di.close || customHours[d].close2,
+        enabled: l.enabled !== false };
+    });
+  } else if (data.open_hours && typeof data.open_hours === 'object') {
     DAYS.forEach(d => { if (data.open_hours[d]) customHours[d] = { ...customHours[d], ...data.open_hours[d] }; });
   }
 
-  // Forward-to number setting (off-hours / can't-answer fallback)
+  // Fallback-to-staff number + auto-forward toggle (off-hours / can't-resolve).
   FORWARD_TO_NUMBER = data.vapi_phone_number || data.twilio_phone || data.telnyx_phone || '';
+  AUTO_FORWARD = data.auto_forward_when_off !== false; // default true
   const fwdInput = document.getElementById('forwardNumberInput');
-  if (fwdInput) fwdInput.value = data.forward_number || '';
+  if (fwdInput) fwdInput.value = data.fallback_number || data.forward_number || '';
+  const afTog = document.getElementById('autoForwardToggle');
+  if (afTog) { afTog.style.background = AUTO_FORWARD ? 'var(--accent)' : 'var(--border)'; afTog.querySelector('div').style.left = AUTO_FORWARD ? '20px' : '2px'; }
   renderForwardToHint();
 
   const used = data.minutes_used || 0;
