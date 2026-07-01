@@ -459,6 +459,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
 <!-- KITCHEN VIEW PANEL -->
 <div id="panel-kitchen" style="display:none;padding:20px;background:var(--bg);min-height:80vh">
+  <audio id="ot-alarm" src="alarm.wav" loop preload="auto"></audio>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
     <div>
       <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px">🍳 Kitchen Display</div>
@@ -934,7 +935,7 @@ function kitchenCardHTML(o) {
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700">${type}${o.order_number ? ' · #' + o.order_number : ''}</div>
     ${o.customer_phone ? `<div style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:700"><a href="tel:${escapeHtml(o.customer_phone)}" style="color:var(--accent);text-decoration:none">📞 ${escapeHtml(fmtPhone(o.customer_phone))}</a></div>` : ''}
-    ${(o.order_type === 'delivery' && o.delivery_address) ? `<div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.4">🏠 ${escapeHtml(o.delivery_address)}</div>` : ''}
+    ${((o.order_type || '').toLowerCase() === 'delivery' && o.delivery_address) ? `<div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.4">🏠 ${escapeHtml(o.delivery_address)}</div>` : ''}
     <div style="margin-bottom:10px">${paymentBadge(o.payment_method)}</div>
     <div style="font-size:16px;line-height:1.9;border-top:1px solid var(--border);padding-top:10px">${itemsHtml}</div>
     <div style="margin-top:12px;font-size:18px;font-weight:900;color:${accent}">Total: $${total}</div>
@@ -2086,10 +2087,11 @@ async function init() {
 // ── KITCHEN NEW-ORDER ALERT (device-side: sound + web notification) ──────────
 // Separate from the SMS/email staff alerts. Rings the device running the kitchen view.
 let _kAlertOn = localStorage.getItem('ot_kitchen_alert') === '1';
-let _kAudioCtx = null, _kRingTimer = null;
+let _kAudioUnlocked = false, _kSafetyTimer = null;
 const _kSeenOrderIds = new Set();
 
 function kitchenVisible() { return document.getElementById('panel-kitchen').style.display !== 'none'; }
+function alarmEl() { return document.getElementById('ot-alarm'); }
 
 function updateAlertToggleUI() {
   const b = document.getElementById('kitchen-alert-toggle');
@@ -2100,41 +2102,33 @@ function updateAlertToggleUI() {
   b.style.borderColor = _kAlertOn ? 'var(--accent)' : 'var(--border)';
 }
 
-function ensureAudio() {
-  try {
-    if (!_kAudioCtx) _kAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (_kAudioCtx.state === 'suspended') _kAudioCtx.resume();
-  } catch (e) {}
-  return _kAudioCtx;
-}
-
-function playBeep() {
-  const ctx = ensureAudio(); if (!ctx) return;
-  [0, 0.18].forEach((t, i) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'square'; o.frequency.value = i === 0 ? 880 : 1175;
-    g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
-    g.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.16);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.17);
-  });
+// Unlock the <audio> element within a user gesture: play it muted once so the
+// browser will allow programmatic play() later (on a new-order event).
+function unlockAlarm() {
+  const a = alarmEl(); if (!a) return Promise.resolve();
+  a.muted = true;
+  return a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; _kAudioUnlocked = true; })
+                 .catch(() => { a.muted = false; });
 }
 
 function testKitchenSound() {
-  ensureAudio(); playBeep();
-  if (!_kAlertOn) showToast('That’s the alert sound — turn Alerts On to ring on new orders.');
+  const a = alarmEl(); if (!a) return;
+  a.muted = false; a.loop = false; a.currentTime = 0;
+  a.play().catch(() => showToast('Tap “Enable Sound Alerts” first to allow sound.'));
+  setTimeout(() => { if (!_isRinging()) { a.pause(); a.currentTime = 0; } }, 1500);
 }
+function _isRinging() { const b = document.getElementById('kitchen-ack-btn'); return b && b.style.display !== 'none'; }
 
 async function toggleKitchenAlerts() {
   _kAlertOn = !_kAlertOn;
   localStorage.setItem('ot_kitchen_alert', _kAlertOn ? '1' : '0');
   updateAlertToggleUI();
   if (_kAlertOn) {
-    ensureAudio(); playBeep();  // user gesture unlocks audio for later auto-rings
+    await unlockAlarm();                         // user gesture → unlock <audio>
     if ('Notification' in window && Notification.permission === 'default') {
       try { await Notification.requestPermission(); } catch (e) {}
     }
+    testKitchenSound();                          // confirm it's audible
     showToast('Kitchen alerts ON — this device rings on new orders');
   } else {
     stopRinging();
@@ -2144,11 +2138,11 @@ async function toggleKitchenAlerts() {
 
 function startRinging(order) {
   if (!_kAlertOn) return;
-  stopRinging();
+  const a = alarmEl(); if (!a) return;
   const ack = document.getElementById('kitchen-ack-btn');
   if (ack) ack.style.display = '';
-  playBeep();
-  _kRingTimer = setInterval(playBeep, 2000);          // repeat until acknowledged
+  a.muted = false; a.loop = true; a.currentTime = 0;
+  a.play().catch(() => {});                       // loops until acknowledged
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
       const n = new Notification('🍽️ New order — ' + (order.customer_name || 'Guest'), {
@@ -2160,11 +2154,14 @@ function startRinging(order) {
       n.onclick = () => { window.focus(); stopRinging(); };
     } catch (e) {}
   }
-  setTimeout(stopRinging, 60000);  // safety: never ring forever if unattended
+  if (_kSafetyTimer) clearTimeout(_kSafetyTimer);
+  _kSafetyTimer = setTimeout(stopRinging, 120000); // safety: never ring forever
 }
 
 function stopRinging() {
-  if (_kRingTimer) { clearInterval(_kRingTimer); _kRingTimer = null; }
+  const a = alarmEl();
+  if (a) { a.pause(); a.loop = false; a.currentTime = 0; }
+  if (_kSafetyTimer) { clearTimeout(_kSafetyTimer); _kSafetyTimer = null; }
   const ack = document.getElementById('kitchen-ack-btn');
   if (ack) ack.style.display = 'none';
 }
