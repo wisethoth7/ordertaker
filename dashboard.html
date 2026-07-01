@@ -448,7 +448,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       <div style="font-size:13px;color:var(--text2);margin-top:3px">Live order queue — visible from across the kitchen</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Alerts: Off</button>
+      <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Enable Sound Alerts</button>
       <button onclick="testKitchenSound()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Test sound</button>
       <button id="kitchen-ack-btn" onclick="stopRinging()" style="display:none;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;animation:pulse 1s infinite">⏹ New order — tap to silence</button>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
@@ -916,11 +916,16 @@ function kitchenCardHTML(o) {
       <div style="font-size:11px;color:var(--text2);font-weight:700">${mins} min ago</div>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700">${type}${o.order_number ? ' · #' + o.order_number : ''}</div>
-    ${o.customer_phone ? `<div style="font-size:13px;color:var(--text);margin-bottom:8px;font-weight:700"><a href="tel:${escapeHtml(o.customer_phone)}" style="color:var(--accent);text-decoration:none">📞 ${escapeHtml(fmtPhone(o.customer_phone))}</a></div>` : ''}
+    ${o.customer_phone ? `<div style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:700"><a href="tel:${escapeHtml(o.customer_phone)}" style="color:var(--accent);text-decoration:none">📞 ${escapeHtml(fmtPhone(o.customer_phone))}</a></div>` : ''}
+    ${(o.order_type === 'delivery' && o.delivery_address) ? `<div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.4">🏠 ${escapeHtml(o.delivery_address)}</div>` : ''}
     <div style="margin-bottom:10px">${paymentBadge(o.payment_method)}</div>
     <div style="font-size:16px;line-height:1.9;border-top:1px solid var(--border);padding-top:10px">${itemsHtml}</div>
     <div style="margin-top:12px;font-size:18px;font-weight:900;color:${accent}">Total: $${total}</div>
     ${btn}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="printOrder('${o.id}')" style="flex:1;padding:9px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer">🖨 Print</button>
+      <button onclick="emailOrder('${o.id}')" style="flex:1;padding:9px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer">✉ Email</button>
+    </div>
   </div>`;
 }
 
@@ -1626,10 +1631,66 @@ async function openOrderDetail(id) {
     <div style="font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:6px">ITEMS</div>
     <div style="margin-bottom:14px">${itemsHtml}</div>
     ${o.special_instructions ? `<div style="font-size:13px;color:var(--text2);margin-bottom:12px"><strong style="color:var(--text)">Notes:</strong> ${escapeHtml(o.special_instructions)}</div>` : ''}
-    <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;border-top:1px solid var(--border);padding-top:12px"><span>Total</span><span style="color:var(--accent)">$${Number(o.total || o.total_amount || 0).toFixed(2)}</span></div>`;
+    <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;border-top:1px solid var(--border);padding-top:12px"><span>Total</span><span style="color:var(--accent)">$${Number(o.total || o.total_amount || 0).toFixed(2)}</span></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="printOrder('${o.id}')" style="flex:1;padding:11px;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">🖨 Print receipt</button>
+      <button onclick="emailOrder('${o.id}')" style="flex:1;padding:11px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✉ Email order</button>
+    </div>`;
   document.getElementById('order-detail-modal').style.display = 'flex';
 }
 function closeOrderDetail() { document.getElementById('order-detail-modal').style.display = 'none'; }
+
+// ── PRINT / EMAIL ORDER RECEIPT ──────────────────────────────────────────
+async function fetchOrderForReceipt(id) {
+  let o = null, items = [];
+  try { ({ data: o } = await sb.from('ot_orders').select('*').eq('id', id).single()); } catch (e) {}
+  try { const { data } = await sb.from('ot_order_items').select('*').eq('order_id', id); items = data || []; } catch (e) {}
+  return { o, items };
+}
+
+function receiptHTML(o, items, restName) {
+  const dt = new Date(o.created_at);
+  const pm = (o.payment_method || '').toLowerCase();
+  const pmLabel = pm === 'cash' ? 'Cash' : (pm ? 'Card' : '—');
+  const rows = items.length
+    ? items.map(it => `<tr><td>${it.quantity ? it.quantity + '× ' : ''}${escapeHtml(it.item_name || it.name || 'Item')}</td><td style="text-align:right">$${Number(it.line_total || it.unit_price || 0).toFixed(2)}</td></tr>`).join('')
+    : '<tr><td colspan="2">Items in call transcript</td></tr>';
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Order Receipt</title>
+  <style>@page{margin:12mm}body{font-family:-apple-system,Arial,sans-serif;color:#000;max-width:360px;margin:0 auto;font-size:13px;padding:10px}
+  h1{font-size:18px;margin:0 0 2px}.muted{color:#333;font-size:12px}table{width:100%;border-collapse:collapse;margin:10px 0}
+  td{padding:4px 0;border-bottom:1px dashed #bbb}.hdr{text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:8px}
+  .tot{display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:2px solid #000;padding-top:8px;margin-top:8px}</style></head>
+  <body onload="window.print()">
+   <div class="hdr"><h1>${escapeHtml(restName)}</h1><div class="muted">${dt.toLocaleString()}</div></div>
+   <div><strong>Order${o.order_number ? ' #' + o.order_number : ''}</strong> · ${escapeHtml((o.order_type || 'order').toUpperCase())}</div>
+   <div>${escapeHtml(o.customer_name || 'Guest')}${o.customer_phone ? ' · ' + escapeHtml(fmtPhone(o.customer_phone)) : ''}</div>
+   ${o.order_type === 'delivery' && o.delivery_address ? `<div class="muted">${escapeHtml(o.delivery_address)}</div>` : ''}
+   <table>${rows}</table>
+   <div class="muted">Payment: ${pmLabel}</div>
+   ${o.special_instructions ? `<div class="muted">Notes: ${escapeHtml(o.special_instructions)}</div>` : ''}
+   <div class="tot"><span>TOTAL</span><span>$${Number(o.total || o.total_amount || 0).toFixed(2)}</span></div>
+  </body></html>`;
+}
+
+async function printOrder(id) {
+  const { o, items } = await fetchOrderForReceipt(id);
+  if (!o) { showToast('Order not found'); return; }
+  const restName = (document.querySelector('.restaurant-name')?.textContent || 'OrderTaker').split(' · ')[0];
+  const w = window.open('', '_blank', 'width=420,height=680');
+  if (!w) { showToast('Allow pop-ups to print the receipt'); return; }
+  w.document.write(receiptHTML(o, items, restName));
+  w.document.close();
+}
+
+async function emailOrder(id) {
+  const to = window.prompt('Email this receipt to:');
+  if (to === null) return;
+  if (!to.includes('@') || !to.includes('.')) { showToast('Enter a valid email address'); return; }
+  try {
+    await sb.functions.invoke('email-order-receipt', { body: { order_id: id, to } });
+    showToast('Receipt emailed to ' + to);
+  } catch (e) { showToast('Could not send — please try again'); }
+}
 
 async function loadBillingData() {
   if (!RESTAURANT_ID) return;
@@ -1971,7 +2032,7 @@ function kitchenVisible() { return document.getElementById('panel-kitchen').styl
 function updateAlertToggleUI() {
   const b = document.getElementById('kitchen-alert-toggle');
   if (!b) return;
-  b.textContent = _kAlertOn ? '🔔 Alerts: On' : '🔔 Alerts: Off';
+  b.textContent = _kAlertOn ? '🔔 Sound Alerts: On' : '🔔 Enable Sound Alerts';
   b.style.background = _kAlertOn ? 'var(--accent)' : 'var(--card2)';
   b.style.color = _kAlertOn ? '#1a0a00' : 'var(--text2)';
   b.style.borderColor = _kAlertOn ? 'var(--accent)' : 'var(--border)';
