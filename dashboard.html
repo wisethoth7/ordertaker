@@ -261,7 +261,24 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
 <!-- RESERVATIONS -->
 <div class="reservations">
-  <div class="res-header">📅 Today's Reservations</div>
+  <div class="res-header" style="display:flex;align-items:center;justify-content:space-between">
+    <span>📅 Reservations</span>
+    <button onclick="openResForm()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer">+ Add Reservation</button>
+  </div>
+  <div id="resForm" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="res-name" placeholder="Customer name" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+      <input id="res-phone" type="tel" placeholder="Phone" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+      <input id="res-date" type="date" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+      <input id="res-time" type="time" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+      <input id="res-party" type="number" min="1" value="2" placeholder="Party size" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+      <input id="res-req" placeholder="Special requests (optional)" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveReservation()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
+      <button onclick="closeResForm()" style="background:var(--card2);color:var(--text2);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-size:13px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
   <div class="res-list" id="res-list">
     <div class="res-row"><div class="res-info"><div class="res-meta">Loading reservations…</div></div></div>
   </div>
@@ -1003,34 +1020,79 @@ async function loadStats() {
 
 async function loadReservations() {
   const list = document.getElementById('res-list');
+  const today = new Date().toISOString().slice(0,10);
   let res, error;
   try {
     ({ data: res, error } = await sb
       .from('ot_reservations')
       .select('*')
       .eq('restaurant_id', RESTAURANT_ID)
-      .eq('reservation_date', new Date().toISOString().slice(0,10))
+      .gte('reservation_date', today)
+      .order('reservation_date', { ascending: true })
       .order('reservation_time', { ascending: true }));
   } catch (e) { error = e; }
 
   if (error || !res || !res.length) {
-    list.innerHTML = `<div class="res-row"><div class="res-info"><div class="res-meta">No reservations for today</div></div></div>`;
+    list.innerHTML = `<div class="res-row"><div class="res-info"><div class="res-meta">No upcoming reservations</div></div></div>`;
     return;
   }
   list.innerHTML = res.map(r => {
-    const [h,m] = r.reservation_time.split(':');
+    const cancelled = r.status === 'cancelled';
+    const [h,m] = (r.reservation_time || '00:00').split(':');
     const hour = ((+h + 11) % 12) + 1;
     const ampm = +h >= 12 ? 'PM' : 'AM';
     const timeStr = `${hour}:${m} ${ampm}`;
-    return `<div class="res-row">
-      <div class="res-time">${timeStr}</div>
+    const dateStr = new Date(r.reservation_date + 'T00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div class="res-row" style="${cancelled ? 'opacity:.45' : ''}">
+      <div class="res-time">${dateStr}<br>${timeStr}</div>
       <div class="res-info">
-        <div class="res-name">${r.customer_name}</div>
-        <div class="res-meta">${r.customer_phone}${r.special_requests ? ' · ' + r.special_requests : ''}</div>
+        <div class="res-name">${escapeHtml(r.customer_name || '')}${cancelled ? ' · <span style="color:var(--red)">Cancelled</span>' : ''}</div>
+        <div class="res-meta">${escapeHtml(r.customer_phone || '')}${r.special_requests ? ' · ' + escapeHtml(r.special_requests) : ''}</div>
       </div>
-      <div class="res-party">${r.party_size} guests</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="res-party">${r.party_size} guests</div>
+        ${cancelled ? '' : `<button onclick="cancelReservation('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--red);padding:3px 9px;font-size:10px;cursor:pointer">Cancel</button>`}
+      </div>
     </div>`;
   }).join('');
+}
+
+function openResForm() {
+  document.getElementById('resForm').style.display = 'block';
+  const d = document.getElementById('res-date');
+  if (!d.value) d.value = new Date().toISOString().slice(0,10);
+}
+function closeResForm() { document.getElementById('resForm').style.display = 'none'; }
+
+async function saveReservation() {
+  const val = id => document.getElementById(id).value.trim();
+  const name = val('res-name'), phone = val('res-phone'), date = val('res-date'), time = val('res-time');
+  const party = parseInt(val('res-party'), 10) || 2, req = val('res-req');
+  if (!name || !date || !time) { showToast('Name, date and time are required'); return; }
+  const { error } = await sb.from('ot_reservations').insert([{
+    restaurant_id: RESTAURANT_ID,
+    customer_name: name,
+    customer_phone: phone || '',   // column is NOT NULL
+    reservation_date: date,
+    reservation_time: time,
+    party_size: party,
+    special_requests: req || null,
+    status: 'confirmed'
+  }]);
+  if (error) { console.error(error); showToast('Could not save reservation — try again'); return; }
+  closeResForm();
+  ['res-name','res-phone','res-req'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-party').value = '2';
+  loadReservations();
+  showToast('Reservation added!');
+}
+
+async function cancelReservation(id) {
+  if (!confirm('Cancel this reservation?')) return;
+  const { error } = await sb.from('ot_reservations').update({ status: 'cancelled' }).eq('id', id);
+  if (error) { showToast('Could not cancel — try again'); return; }
+  loadReservations();
+  showToast('Reservation cancelled');
 }
 
 // ── AGENT SCHEDULE ──────────────────────────────────────────────────────
