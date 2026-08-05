@@ -209,17 +209,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </div>
   </div>
 
-  <!-- MODE SELECTOR -->
-  <div style="display:flex;gap:8px;margin-bottom:14px">
-    <button class="schedule-mode-btn active" id="mode-always" onclick="setScheduleMode('always')">Always On</button>
-    <button class="schedule-mode-btn" id="mode-busy" onclick="setScheduleMode('busy')">Busy Hours Only</button>
-    <button class="schedule-mode-btn" id="mode-custom" onclick="setScheduleMode('custom')">Custom Hours</button>
-  </div>
-
-  <!-- BUSY HOURS INFO -->
-  <div id="busy-info" style="display:none;background:var(--card2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
-    Agent answers calls during <strong style="color:var(--text)">Lunch (11am–2pm)</strong> and <strong style="color:var(--text)">Dinner (5pm–9pm)</strong> only — when your phone rings most. Calls outside those windows go to a closed message, saving your included minutes for peak hours.
-  </div>
+  <!-- MODE SELECTOR — exactly one mode is active at a time. Each row has its own
+       on/off control, but switching one on switches the others off. Persisted via
+       ot_set_schedule_mode(), which keeps agent_active in sync server-side. -->
+  <div id="schedule-modes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
 
   <!-- CUSTOM HOURS GRID -->
   <div id="custom-hours" style="display:none">
@@ -227,6 +220,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </div>
     <button onclick="saveCustomHours()" class="action-btn" style="font-size:12px;padding:8px 16px;margin-top:4px">Save Hours</button>
   </div>
+
+  <!-- ORDER ALERT PREFERENCES (also mirrored in the kitchen view header) -->
+  <div style="font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--text2);margin:4px 0 8px">ORDER ALERTS</div>
+  <div id="alert-prefs-settings" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
 
   <!-- SPAM PROTECTION -->
   <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:10px;padding:11px 14px;margin-top:8px">
@@ -467,8 +464,9 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Enable Sound Alerts</button>
+      <div id="alert-prefs-kitchen" style="display:flex;flex-direction:column;gap:6px;min-width:270px"></div>
       <button onclick="testKitchenSound()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Test sound</button>
-      <button id="kitchen-ack-btn" onclick="stopRinging()" style="display:none;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;animation:pulse 1s infinite">⏹ New order — tap to silence</button>
+      <button id="kitchen-ack-btn" onclick="acknowledgeOrders()" style="display:none;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;animation:pulse 1s infinite">⏹ New order — tap to acknowledge</button>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
         <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
         LIVE
@@ -493,6 +491,19 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     </div>
   </div>
 </div><!-- end panel-kitchen -->
+
+<!-- Blocking new-order alert. Kept at top level (NOT inside #panel-kitchen) — a
+     position:fixed element inside a display:none panel never renders, and this must
+     block from any tab. Rings until a staff member presses "Got it": no auto-dismiss,
+     no timer. Acknowledgement is the only thing that silences it. -->
+<div id="ot-order-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px">
+  <div role="alertdialog" aria-modal="true" aria-labelledby="ot-modal-title" style="background:var(--card);border:2px solid var(--accent);border-radius:20px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.6)">
+    <div id="ot-modal-title" style="font-size:26px;font-weight:900;color:var(--accent);margin-bottom:4px">🔔 New Order</div>
+    <div id="ot-modal-count" style="font-size:13px;color:var(--text2);font-weight:700;margin-bottom:16px"></div>
+    <div id="ot-modal-body" style="font-size:17px;line-height:1.7;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px 0;margin-bottom:18px"></div>
+    <button id="ot-modal-ack" onclick="acknowledgeOrders()" style="width:100%;padding:16px;background:var(--accent);color:#1a0a00;border:none;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer">Got it</button>
+  </div>
+</div>
 
 <!-- MENU PANEL -->
 <div id="panel-menu" style="display:none;padding:24px;max-width:760px;margin:0 auto">
@@ -618,7 +629,12 @@ async function handleMenuFile(file) {
   setMenuStatus('Uploading ' + file.name + '…', 'loading');
   document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.5)';
 
-  const filePath = RESTAURANT_ID + '/' + Date.now() + '_' + file.name;
+  // Supabase storage keys reject spaces and most punctuation, so slugify the name.
+  // The extension must survive — ordertaker-parse-menu picks PDF vs image vs CSV
+  // off the end of file_path.
+  const base = file.name.slice(0, file.name.length - ext.length - 1);
+  const safeBase = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'menu';
+  const filePath = RESTAURANT_ID + '/' + Date.now() + '_' + safeBase + '.' + ext;
   const { error: uploadErr } = await sb.storage
     .from('ot-menu-uploads')
     .upload(filePath, file, { upsert: true });
@@ -798,7 +814,9 @@ function timeAgo(ts) {
   if (mins === 1) return '1 min ago';
   if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m ago`;
+  if (hrs < 24) return `${hrs}h ${mins % 60}m ago`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
 function orderCardHTML(order) {
@@ -861,16 +879,20 @@ async function loadOrders() {
   if (error) { console.error(error); return; }
 
   const orderIds = orders.map(o => o.id);
+  // Build into a local map, then assign in one synchronous step. loadOrders and
+  // loadKitchen share ITEMS_BY_ORDER and run concurrently; resetting the global
+  // before an await lets the other loader's rows land on top and render twice.
+  const itemsMap = {};
   if (orderIds.length) {
     const { data: items } = await sb
       .from('ot_order_items')
       .select('*')
       .in('order_id', orderIds);
-    ITEMS_BY_ORDER = {};
     (items || []).forEach(it => {
-      (ITEMS_BY_ORDER[it.order_id] ||= []).push(it);
+      (itemsMap[it.order_id] ||= []).push(it);
     });
   }
+  ITEMS_BY_ORDER = itemsMap;
 
   const cols = { new: [], preparing: [], ready: [] };
   orders.forEach(o => cols[o.status]?.push(o));
@@ -919,7 +941,6 @@ function kitchenCardHTML(o) {
   const itemsHtml = items.length
     ? items.map(it => `<div>${it.quantity ? it.quantity + '× ' : ''}${escapeHtml(it.name || it.item_name || 'Item')}</div>`).join('')
     : '<div style="color:var(--text2)">Items in call transcript</div>';
-  const mins = Math.max(0, Math.round((Date.now() - new Date(o.created_at).getTime()) / 60000));
   const type = (o.order_type || 'pickup').toUpperCase();
   const total = Number(o.total || o.total_amount || 0).toFixed(2);
   const accent = o.status === 'ready' ? 'var(--green)' : o.status === 'preparing' ? 'var(--yellow)' : 'var(--accent)';
@@ -931,7 +952,7 @@ function kitchenCardHTML(o) {
   return `<div style="background:${bg};border:1px solid var(--border);border-left:4px solid ${accent};border-radius:14px;padding:18px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div style="font-size:20px;font-weight:900">${escapeHtml(o.customer_name || 'Guest')}</div>
-      <div style="font-size:11px;color:var(--text2);font-weight:700">${mins} min ago</div>
+      <div style="font-size:11px;color:var(--text2);font-weight:700">${timeAgo(o.created_at)}</div>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700">${type}${o.order_number ? ' · #' + o.order_number : ''}</div>
     ${o.customer_phone ? `<div style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:700"><a href="tel:${escapeHtml(o.customer_phone)}" style="color:var(--accent);text-decoration:none">📞 ${escapeHtml(fmtPhone(o.customer_phone))}</a></div>` : ''}
@@ -973,13 +994,15 @@ async function loadKitchen() {
   orders = orders || [];
 
   const ids = orders.map(o => o.id);
-  ITEMS_BY_ORDER = {};
+  // Local map + single atomic assign — see the matching note in loadOrders().
+  const itemsMap = {};
   if (ids.length) {
     try {
       const { data: items } = await sb.from('ot_order_items').select('*').in('order_id', ids);
-      (items || []).forEach(it => { (ITEMS_BY_ORDER[it.order_id] ||= []).push(it); });
+      (items || []).forEach(it => { (itemsMap[it.order_id] ||= []).push(it); });
     } catch (e) { /* items optional */ }
   }
+  ITEMS_BY_ORDER = itemsMap;
 
   const grouped = { new: [], preparing: [], ready: [] };
   orders.forEach(o => grouped[o.status]?.push(o));
@@ -1120,12 +1143,27 @@ const ALWAYS_HOURS = {
   sun:{open:'10:00',close:'23:00',enabled:true}
 };
 
-let currentMode = 'always';
 // Custom hours support TWO service windows per day: Lunch (open/close) + Dinner (open2/close2)
 let customHours = JSON.parse(JSON.stringify(BUSY_HOURS));
 let agentActive = true;
 let spamEnabled = true;
 let FORWARD_TO_NUMBER = '';
+let OWNED_RESTAURANTS = [];
+
+// Only shown when the account owns more than one restaurant.
+function renderRestaurantSwitcher(currentId) {
+  const host = document.querySelector('.restaurant-name');
+  if (!host) return;
+  document.getElementById('ot-rest-switcher')?.remove();
+  if (OWNED_RESTAURANTS.length < 2) return;
+  const sel = document.createElement('select');
+  sel.id = 'ot-rest-switcher';
+  sel.style.cssText = 'margin-left:10px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer';
+  sel.innerHTML = OWNED_RESTAURANTS
+    .map(r => `<option value="${r.id}"${r.id === currentId ? ' selected' : ''}>${escapeHtml(r.name || 'Untitled')}</option>`).join('');
+  sel.onchange = () => { localStorage.setItem('ot_restaurant_id', sel.value); window.location.reload(); };
+  host.after(sel);
+}
 let AUTO_FORWARD = true;
 
 async function toggleAutoForward() {
@@ -1136,14 +1174,109 @@ async function toggleAutoForward() {
   showToast(AUTO_FORWARD ? 'Auto-forward ON' : 'Auto-forward OFF');
 }
 
-function setScheduleMode(mode) {
-  currentMode = mode;
-  document.querySelectorAll('.schedule-mode-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`mode-${mode}`).classList.add('active');
-  document.getElementById('busy-info').style.display = mode === 'busy' ? 'block' : 'none';
-  document.getElementById('custom-hours').style.display = mode === 'custom' ? 'block' : 'none';
-  if (mode === 'custom') buildHoursGrid();
-  saveScheduleToSupabase();
+// The four modes are mutually exclusive and match the agent_schedule_mode CHECK
+// constraint in Postgres.
+// Persisted alert preferences. alert_repeat_until_ack is what makes the new-order
+// modal keep ringing until a staff member presses "Got it".
+let ALERT_SOUND = true, ALERT_REPEAT = true;
+
+function alertSwitch(on, onclick, label, desc) {
+  return `<div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:10px;background:var(--card2);border:1px solid var(--border)">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12.5px;font-weight:800">${label}</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-top:2px">${desc}</div>
+    </div>
+    <div role="switch" aria-checked="${on}" aria-label="${label}" onclick="${onclick}"
+      style="width:42px;height:24px;border-radius:12px;background:${on ? 'var(--accent)' : 'var(--border)'};cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+      <div style="position:absolute;top:2px;left:${on ? '20px' : '2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div>
+    </div>
+  </div>`;
+}
+
+function renderAlertToggles() {
+  const html =
+    alertSwitch(ALERT_SOUND, "toggleAlertPref('alert_sound_enabled')", '🔔 Sound on new orders',
+      'Play an alert sound on this device when an order arrives.') +
+    alertSwitch(ALERT_REPEAT, "toggleAlertPref('alert_repeat_until_ack')", '🔁 Keep ringing until acknowledged',
+      'Show a blocking pop-up that keeps ringing until a staff member presses “Got it”.');
+  ['alert-prefs-settings', 'alert-prefs-kitchen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+}
+
+async function toggleAlertPref(col) {
+  if (!RESTAURANT_ID) return;
+  const next = col === 'alert_sound_enabled' ? !ALERT_SOUND : !ALERT_REPEAT;
+  if (col === 'alert_sound_enabled') ALERT_SOUND = next; else ALERT_REPEAT = next;
+  renderAlertToggles();
+  const { error } = await sb.from('ot_restaurants').update({ [col]: next }).eq('id', RESTAURANT_ID);
+  if (error) {
+    if (col === 'alert_sound_enabled') ALERT_SOUND = !next; else ALERT_REPEAT = !next;
+    renderAlertToggles();
+    showToast('Could not save that setting');
+    return;
+  }
+  if (col === 'alert_sound_enabled') {
+    if (next) { unlockAlarm().then(testKitchenSound); } else { stopRinging(); }
+  }
+  if (col === 'alert_repeat_until_ack' && !next) stopRinging();
+  showToast(next ? 'Turned on' : 'Turned off');
+}
+
+const SCHEDULE_MODES = [
+  { id: 'always',         label: 'Always on',            desc: 'The agent answers every call, 24/7.' },
+  { id: 'business_hours', label: 'During business hours', desc: 'Answers only while you\'re open. Outside those hours callers hear your closed message.' },
+  { id: 'after_hours',    label: 'After hours only',      desc: 'You take calls while open; the agent covers nights and closed days.' },
+  { id: 'off',            label: 'Off',                   desc: 'The agent never answers. Calls forward to your own line instead.' },
+];
+let SCHEDULE_MODE = 'always';
+
+function renderScheduleModes() {
+  const host = document.getElementById('schedule-modes');
+  if (!host) return;
+  host.innerHTML = SCHEDULE_MODES.map(m => {
+    const on = SCHEDULE_MODE === m.id;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+        background:${on ? 'rgba(255,107,53,.08)' : 'var(--card2)'};border:1.5px solid ${on ? 'var(--accent)' : 'var(--border)'}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:800;color:${on ? 'var(--accent)' : 'var(--text)'}">${m.label}</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.5;margin-top:2px">${m.desc}</div>
+      </div>
+      <div role="switch" aria-checked="${on}" aria-label="${m.label}" onclick="setScheduleMode('${m.id}')"
+        style="width:42px;height:24px;border-radius:12px;background:${on ? 'var(--accent)' : 'var(--border)'};cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+        <div style="position:absolute;top:2px;left:${on ? '20px' : '2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s"></div>
+      </div>
+    </div>`;
+  }).join('');
+  // Hours only matter for the two windowed modes.
+  const ch = document.getElementById('custom-hours');
+  if (ch) {
+    const needsHours = SCHEDULE_MODE === 'business_hours' || SCHEDULE_MODE === 'after_hours';
+    ch.style.display = needsHours ? 'block' : 'none';
+    if (needsHours) buildHoursGrid();
+  }
+}
+
+async function setScheduleMode(mode) {
+  if (!RESTAURANT_ID) return;
+  const previous = SCHEDULE_MODE;
+  SCHEDULE_MODE = mode;          // optimistic — only one can ever be on
+  renderScheduleModes();
+  const { data, error } = await sb.rpc('ot_set_schedule_mode', {
+    p_restaurant_id: RESTAURANT_ID, p_mode: mode
+  });
+  // The RPC returns a text result: a message starting with "Agent schedule set to"
+  // on success, otherwise an explanation.
+  if (error || (typeof data === 'string' && !data.startsWith('Agent schedule set to'))) {
+    SCHEDULE_MODE = previous;
+    renderScheduleModes();
+    showToast(error?.message || data || 'Could not change the agent schedule');
+    return;
+  }
+  agentActive = mode !== 'off';
+  updateAgentToggleUI();
+  showToast('Agent schedule: ' + (SCHEDULE_MODES.find(m => m.id === mode)?.label || mode));
 }
 
 function buildHoursGrid() {
@@ -1220,10 +1353,8 @@ async function saveForwardNumber() {
 
 async function saveScheduleToSupabase() {
   if (!RESTAURANT_ID) return;
-  let hours;
-  if (currentMode === 'always') hours = ALWAYS_HOURS;
-  else if (currentMode === 'busy') hours = BUSY_HOURS;
-  else hours = customHours;
+  // 'always' means 24/7; every other mode runs off the owner's real opening hours.
+  const hours = SCHEDULE_MODE === 'always' ? ALWAYS_HOURS : customHours;
   // Persist Lunch and Dinner as SEPARATE windows; keep open_hours as the overall combined.
   const lunch = {}, dinner = {};
   DAYS.forEach(d => {
@@ -1240,11 +1371,10 @@ async function saveScheduleToSupabase() {
   }).eq('id', RESTAURANT_ID);
 }
 
+// The header toggle is just a shortcut for the Off mode, so it can never disagree
+// with the mode list below it.
 async function toggleAgentNow() {
-  agentActive = !agentActive;
-  updateAgentToggleUI();
-  await saveScheduleToSupabase();
-  showToast(agentActive ? 'Agent is ON — answering calls' : 'Agent paused — calls going to voicemail');
+  await setScheduleMode(SCHEDULE_MODE === 'off' ? 'always' : 'off');
 }
 
 function updateAgentToggleUI() {
@@ -1272,7 +1402,7 @@ async function loadScheduleSettings() {
   let data, error;
   try {
     ({ data, error } = await sb.from('ot_restaurants')
-      .select('agent_active,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
+      .select('agent_active,agent_schedule_mode,alert_sound_enabled,alert_repeat_until_ack,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
       .eq('id', RESTAURANT_ID).single());
   } catch (e) { error = e; }
 
@@ -1287,7 +1417,12 @@ async function loadScheduleSettings() {
 
   agentActive = data.agent_active !== false;
   spamEnabled = data.spam_protection !== false;
+  SCHEDULE_MODE = data.agent_schedule_mode || (agentActive ? 'always' : 'off');
+  ALERT_SOUND = data.alert_sound_enabled !== false;
+  ALERT_REPEAT = data.alert_repeat_until_ack !== false;
   updateAgentToggleUI();
+  renderScheduleModes();
+  renderAlertToggles();
 
   const spamKnob = document.getElementById('spamKnob');
   const spamTog = document.getElementById('spamToggle');
@@ -1531,65 +1666,111 @@ async function loadPosState() {
 }
 
 // ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
-const CHECKLIST_STEPS = [
-  {
-    id: 'menu', icon: '📋', title: 'Upload Your Menu',
-    body: 'Add your items — prices, descriptions, and allergens. The AI learns your full menu instantly.',
-    cta: `<button onclick="switchTab('menu')" style="padding:9px 18px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;margin-top:10px">Open Menu →</button>`
-  },
-  {
-    id: 'staff', icon: '📱', title: 'Add Staff Alert Numbers',
-    body: "Add your phone number and your staff's so everyone gets an SMS the moment an order or reservation comes in.",
-    cta: `<button onclick="switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)" style="padding:9px 18px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;margin-top:10px">Jump to Staff Numbers ↓</button>`
-  },
-  {
-    id: 'test', icon: '📞', title: 'Test Your Agent',
-    body: 'Call your OrderTaker number and try placing an order — it should appear in the board in seconds. Your agent number is shown in your account settings.',
-    cta: ''
-  },
-  {
-    id: 'forward', icon: '↩️', title: 'Forward Your Calls',
-    body: `<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:12px;color:var(--text)">📞 <strong>We'll provide your OrderTaker phone number once you sign up</strong> — it appears in the Agent Schedule panel and below. Forward your calls to it.</div>Forward calls to your OrderTaker agent so it can answer for you. <strong style="color:var(--text)">Conditional forwarding</strong> (recommended) only forwards when you're busy or don't pick up — you keep using your normal line.<br><br>
-      Forward your calls to: <code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:13px;letter-spacing:1px;color:var(--accent)">{{AGENT_NUMBER}}</code><br><br>
+// A function, not a constant: FORWARD_TO_NUMBER is only populated once the
+// restaurant row loads, well after this script is parsed.
+const forwardingHelp = () => `
+  <div style="margin-top:22px;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:12px">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px">\u21a9\ufe0f How to forward your calls</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.65">
+      Forward calls to your OrderTaker agent so it can answer for you.
+      <strong style="color:var(--text)">Conditional forwarding</strong> (recommended) only forwards when you're busy or don't pick up \u2014 you keep using your normal line.<br><br>
+      Forward your calls to: <code style="background:var(--card2);padding:5px 12px;border-radius:6px;font-size:13px;letter-spacing:1px;color:var(--accent)">${FORWARD_TO_NUMBER || 'your OrderTaker number'}</code><br><br>
       Dial from your restaurant phone:
       <div style="margin:8px 0 0;font-size:12px;color:var(--text2);line-height:1.9">
-        • <strong style="color:var(--text)">Verizon / T-Mobile / US Cellular:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*71</code> then the number above, press call<br>
-        • <strong style="color:var(--text)">AT&T:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> (no-answer) — call<br>
-        • <strong style="color:var(--text)">Landline / other:</strong> <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> for no-answer, or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*21*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> to forward <em>all</em> calls
+        \u2022 <strong style="color:var(--text)">Verizon / T-Mobile / US Cellular:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*71</code> then the number above, press call<br>
+        \u2022 <strong style="color:var(--text)">AT&amp;T:</strong> dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> (no-answer) \u2014 call<br>
+        \u2022 <strong style="color:var(--text)">Landline / other:</strong> <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*61*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> for no-answer, or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">*21*</code> + number + <code style="background:var(--card2);padding:2px 7px;border-radius:5px">#</code> to forward <em>all</em> calls
       </div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text2)">To turn it off later: dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##61#</code> (or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##21#</code>). Not sure which carrier setting to use? Call your carrier — it takes under 2 minutes.</div>`,
-    cta: ''
-  },
-  {
-    id: 'live', icon: '🎉', title: "You're Live!",
-    body: "Your AI phone agent is now answering calls 24/7. Every order and reservation appears in the Orders tab in real time.",
-    cta: ''
-  }
-];
+      <div style="margin-top:8px;font-size:12px;color:var(--text2)">To turn it off later: dial <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##61#</code> (or <code style="background:var(--card2);padding:2px 7px;border-radius:5px">##21#</code>).</div>
+    </div>
+  </div>`;
 
-function renderChecklist() {
-  const done = JSON.parse(localStorage.getItem('ot_checklist') || '{}');
-  const completed = CHECKLIST_STEPS.filter(s => done[s.id]).length;
-  document.getElementById('checklist-bar').style.width = (completed / CHECKLIST_STEPS.length * 100) + '%';
-  document.getElementById('checklist-items').innerHTML = CHECKLIST_STEPS.map((step, i) => {
-    const isDone = !!done[step.id];
-    return `<div style="display:flex;gap:14px;padding:18px;background:${isDone ? 'rgba(74,222,128,0.04)' : 'var(--card)'};border:1px solid ${isDone ? 'rgba(74,222,128,0.2)' : 'var(--border)'};border-radius:12px;margin-bottom:10px;transition:all .2s">
-      <div onclick="toggleCheck('${step.id}')" style="width:26px;height:26px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};background:${isDone ? 'var(--green)' : 'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#052e16;font-weight:800;transition:all .2s;margin-top:2px">${isDone ? '✓' : ''}</div>
-      <div style="flex:1">
-        <div style="font-size:10px;font-weight:800;color:${isDone ? 'var(--green)' : 'var(--accent)'};letter-spacing:.8px;margin-bottom:3px">STEP ${i + 1} OF 5</div>
-        <div style="font-size:15px;font-weight:800;margin-bottom:5px;${isDone ? 'opacity:.5' : ''}">${step.icon} ${step.title}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.65">${step.body.replace(/\{\{AGENT_NUMBER\}\}/g, FORWARD_TO_NUMBER || 'your OrderTaker number')}</div>
-        ${step.cta ? `<div>${step.cta}</div>` : ''}
+// Real readiness state comes from ot_readiness_check(restaurant_id) in Postgres —
+// it returns BLOCKER / WARN / INFO rows. Nothing here is self-reported, so an owner
+// can't tick a box and believe they're live when they aren't.
+const READINESS_FIX = {
+  phone_number:     { label: 'Business phone number', fix: "switchTab('orders')", cta: 'Open Settings →' },
+  owner_phone:      { label: 'Owner contact number',  fix: "switchTab('orders')", cta: 'Open Settings →' },
+  hours:            { label: 'Opening hours',          fix: "switchTab('orders')", cta: 'Set hours →' },
+  open_hours:       { label: 'Opening hours',          fix: "switchTab('orders')", cta: 'Set hours →' },
+  menu:             { label: 'Menu',                   fix: "switchTab('menu')",   cta: 'Upload menu →' },
+  staff_phone_list: { label: 'Staff SMS alerts',       fix: "switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)", cta: 'Add numbers →' },
+  staff_email_list: { label: 'Staff email alerts',     fix: "switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)", cta: 'Add emails →' },
+  billing:          { label: 'Billing',                fix: "switchTab('billing')", cta: 'Open Billing →' },
+  account_link:     { label: 'Account link',           fix: '', cta: '' },
+  // Handled by our team, not the owner — no CTA, covered by the support note below.
+  vapi_assistant_id: { label: 'Agent routing',         fix: '', cta: '' },
+  'inbound number':  { label: 'Your OrderTaker number', fix: '', cta: '' },
+  summary:           { label: 'Your setup at a glance', fix: '', cta: '' },
+};
+const SEV_STYLE = {
+  BLOCKER: { color: 'var(--accent)', bg: 'rgba(255,107,53,.07)', border: 'rgba(255,107,53,.35)', icon: '⛔', word: 'Blocking' },
+  WARN:    { color: 'var(--yellow)', bg: 'rgba(250,204,21,.06)', border: 'rgba(250,204,21,.30)', icon: '⚠️', word: 'Needs attention' },
+  INFO:    { color: 'var(--text2)', bg: 'var(--card)',           border: 'var(--border)',        icon: 'ℹ️', word: 'Info' },
+};
+
+async function renderChecklist() {
+  const host = document.getElementById('checklist-items');
+  const bar = document.getElementById('checklist-bar');
+  if (!host) return;
+  if (!RESTAURANT_ID) { host.innerHTML = '<div style="color:var(--text2);padding:16px 0">No restaurant loaded — please refresh.</div>'; return; }
+  host.innerHTML = '<div style="color:var(--text2);padding:16px 0">Checking your setup…</div>';
+
+  let rows, error;
+  try {
+    ({ data: rows, error } = await sb.rpc('ot_readiness_check', { p_restaurant_id: RESTAURANT_ID }));
+  } catch (e) { error = e; }
+  if (error || !rows) {
+    host.innerHTML = `<div style="color:var(--text2);padding:16px 0">Couldn't load your setup status. <a href="#" onclick="renderChecklist();return false;" style="color:var(--accent)">Retry</a></div>`;
+    return;
+  }
+
+  const blockers = rows.filter(r => r.severity === 'BLOCKER');
+  const warns    = rows.filter(r => r.severity === 'WARN');
+  const infos    = rows.filter(r => r.severity === 'INFO');
+
+  // Progress = how much of the actionable setup is clear.
+  const actionable = blockers.length + warns.length;
+  const pct = actionable === 0 ? 100 : Math.max(4, Math.round(100 * (1 - (blockers.length * 2 + warns.length) / (actionable * 2 + 1))));
+  if (bar) { bar.style.width = pct + '%'; bar.style.background = blockers.length ? 'var(--accent)' : (warns.length ? 'var(--yellow)' : 'var(--green)'); }
+
+  const headline = blockers.length
+    ? `<div style="padding:16px 18px;border-radius:12px;background:rgba(255,107,53,.09);border:1px solid rgba(255,107,53,.35);margin-bottom:16px">
+         <div style="font-size:16px;font-weight:900;color:var(--accent)">⛔ Not ready to take calls</div>
+         <div style="font-size:13px;color:var(--text2);margin-top:4px">${blockers.length} blocking item${blockers.length > 1 ? 's' : ''} must be fixed before your agent can work properly.</div>
+       </div>`
+    : warns.length
+      ? `<div style="padding:16px 18px;border-radius:12px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.3);margin-bottom:16px">
+           <div style="font-size:16px;font-weight:900;color:var(--yellow)">⚠️ Live, with gaps</div>
+           <div style="font-size:13px;color:var(--text2);margin-top:4px">Your agent can take calls, but ${warns.length} item${warns.length > 1 ? 's' : ''} still need attention.</div>
+         </div>`
+      : `<div style="padding:16px 18px;border-radius:12px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);margin-bottom:16px">
+           <div style="font-size:16px;font-weight:900;color:var(--green)">✓ You're live</div>
+           <div style="font-size:13px;color:var(--text2);margin-top:4px">Everything checks out. Your agent is answering calls.</div>
+         </div>`;
+
+  const card = (r) => {
+    const s = SEV_STYLE[r.severity] || SEV_STYLE.INFO;
+    const meta = READINESS_FIX[r.item] || { label: r.item, fix: '', cta: '' };
+    return `<div style="display:flex;gap:14px;padding:16px 18px;background:${s.bg};border:1px solid ${s.border};border-radius:12px;margin-bottom:10px">
+      <div style="font-size:18px;line-height:1.3;flex-shrink:0">${s.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:800;color:${s.color};letter-spacing:.8px;margin-bottom:3px">${s.word.toUpperCase()}</div>
+        <div style="font-size:15px;font-weight:800;margin-bottom:4px">${escapeHtml(meta.label)}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">${escapeHtml(r.detail || '')}</div>
+        ${meta.fix ? `<button onclick="${meta.fix}" style="margin-top:10px;padding:8px 16px;background:var(--accent);color:#1a0a00;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer">${escapeHtml(meta.cta)}</button>` : ''}
       </div>
     </div>`;
-  }).join('');
-}
+  };
 
-function toggleCheck(id) {
-  const done = JSON.parse(localStorage.getItem('ot_checklist') || '{}');
-  done[id] = !done[id];
-  localStorage.setItem('ot_checklist', JSON.stringify(done));
-  renderChecklist();
+  const support = `<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6">Items we handle for you (agent routing, your OrderTaker number) are set up by our team — email <a href="mailto:support@niledreamsdigital.com" style="color:var(--accent)">support@niledreamsdigital.com</a> if one stays flagged.</div>`;
+
+  host.innerHTML = headline
+    + [...blockers, ...warns].map(card).join('')
+    + (infos.length ? `<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">${infos.map(card).join('')}</div>` : '')
+    + support
+    + `<div style="margin-top:18px"><button onclick="renderChecklist()" style="padding:9px 18px;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:8px;font-size:12px;font-weight:800;cursor:pointer">↻ Re-check my setup</button></div>`
+    + forwardingHelp();
 }
 
 async function loadCallLogs() {
@@ -2022,20 +2203,29 @@ async function init() {
   // read (or a prompt) that could leave the dashboard spinning.
   let rest = null;
   try {
-    const { data: ensured, error: ensErr } = await sb.rpc('ensure_restaurant', { p_name: null, p_phone: null });
+    const { error: ensErr } = await sb.rpc('ensure_restaurant', { p_name: null, p_phone: null });
     if (ensErr) throw ensErr;
-    rest = ensured;
   } catch (e) {
     console.error('ensure_restaurant failed', e);
-    // Fallback: plain read in case the RPC is briefly unavailable
-    const { data } = await sb.from('ot_restaurants').select('*').eq('user_id', session.user.id).maybeSingle();
-    rest = data;
   }
+  // An account can own more than one restaurant (a test one alongside the real
+  // one). ensure_restaurant's `limit 1` has no ORDER BY, so never trust which row
+  // it hands back — use it only to create-if-missing, then pick deterministically
+  // (oldest first) and let the owner switch.
+  try {
+    const { data: mine } = await sb.from('ot_restaurants').select('*')
+      .eq('user_id', session.user.id).order('created_at', { ascending: true });
+    OWNED_RESTAURANTS = mine || [];
+    const saved = localStorage.getItem('ot_restaurant_id');
+    rest = OWNED_RESTAURANTS.find(r => r.id === saved) || OWNED_RESTAURANTS[0] || null;
+  } catch (e) { console.error('restaurant read failed', e); }
 
   if (rest) {
     RESTAURANT_ID = rest.id;
+    localStorage.setItem('ot_restaurant_id', rest.id);
     document.querySelector('.restaurant-name').textContent =
       (rest.name || 'My Restaurant') + (rest.city ? ' · ' + rest.city : '');
+    renderRestaurantSwitcher(rest.id);
   } else {
     // Could not create or read a row — clear every "Loading…" placeholder so the
     // dashboard shows empty states (never an infinite spinner) and stop here.
@@ -2087,7 +2277,7 @@ async function init() {
 // ── KITCHEN NEW-ORDER ALERT (device-side: sound + web notification) ──────────
 // Separate from the SMS/email staff alerts. Rings the device running the kitchen view.
 let _kAlertOn = localStorage.getItem('ot_kitchen_alert') === '1';
-let _kAudioUnlocked = false, _kSafetyTimer = null;
+let _kAudioUnlocked = false;
 const _kSeenOrderIds = new Set();
 
 function kitchenVisible() { return document.getElementById('panel-kitchen').style.display !== 'none'; }
@@ -2136,13 +2326,64 @@ async function toggleKitchenAlerts() {
   }
 }
 
+// Orders shown in the blocking modal, awaiting acknowledgement.
+let _kPending = [];
+
+function _orderSummaryHTML(o) {
+  const items = (ITEMS_BY_ORDER[o.id] || []);
+  const lines = items.length
+    ? items.map(it => `<div>${it.quantity ? it.quantity + '× ' : ''}${escapeHtml(it.item_name || it.name || 'Item')}</div>`).join('')
+    : '<div style="color:var(--text2)">Items loading…</div>';
+  return `<div style="margin-bottom:14px">
+    <div style="font-weight:900;font-size:19px">${escapeHtml(o.customer_name || 'Guest')}
+      <span style="font-size:14px;color:var(--text2);font-weight:700">· ${(o.order_type || 'pickup').toUpperCase()}${o.order_number ? ' · #' + o.order_number : ''}</span></div>
+    ${o.customer_phone ? `<div style="font-size:14px;color:var(--text2)">📞 ${escapeHtml(fmtPhone(o.customer_phone))}</div>` : ''}
+    ${((o.order_type || '').toLowerCase() === 'delivery' && o.delivery_address) ? `<div style="font-size:14px;color:var(--text2)">🏠 ${escapeHtml(o.delivery_address)}</div>` : ''}
+    <div style="margin-top:8px">${lines}</div>
+    <div style="margin-top:6px;font-weight:900;color:var(--accent)">Total: $${Number(o.total || o.total_amount || 0).toFixed(2)}</div>
+  </div>`;
+}
+
+function renderOrderModal() {
+  const wrap = document.getElementById('ot-order-modal');
+  if (!wrap) return;
+  if (!_kPending.length) { wrap.style.display = 'none'; return; }
+  document.getElementById('ot-modal-count').textContent =
+    _kPending.length === 1 ? 'Waiting for acknowledgement' : `${_kPending.length} new orders waiting for acknowledgement`;
+  document.getElementById('ot-modal-body').innerHTML = _kPending.map(_orderSummaryHTML).join('');
+  wrap.style.display = 'flex';
+  const btn = document.getElementById('ot-modal-ack');
+  if (btn) btn.focus();
+}
+
+// The ONLY way the alarm stops: a staff member presses "Got it".
+async function acknowledgeOrders() {
+  const acked = _kPending.slice();
+  _kPending = [];
+  stopRinging();
+  renderOrderModal();
+  if (!acked.length) return;
+  const at = new Date().toISOString();
+  const uid = _currentUser?.id || null;
+  const email = _currentUser?.email || null;
+  try {
+    await sb.from('ot_orders')
+      .update({ acknowledged_at: at, acknowledged_by: uid, acknowledged_by_email: email })
+      .in('id', acked.map(o => o.id));
+  } catch (e) { console.error('ack log failed', e); }
+  showToast(acked.length === 1 ? 'Order acknowledged' : `${acked.length} orders acknowledged`);
+}
+
 function startRinging(order) {
-  if (!_kAlertOn) return;
+  // Device opt-in AND the saved restaurant preference must both allow sound.
+  if (!_kAlertOn || !ALERT_SOUND) return;
   const a = alarmEl(); if (!a) return;
   const ack = document.getElementById('kitchen-ack-btn');
   if (ack) ack.style.display = '';
-  a.muted = false; a.loop = true; a.currentTime = 0;
-  a.play().catch(() => {});                       // loops until acknowledged
+  // Looping is what makes it ring until "Got it"; when the owner has turned that
+  // off, play the alert once instead.
+  a.muted = false; a.loop = ALERT_REPEAT; a.currentTime = 0;
+  a.play().catch(() => {});
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
       const n = new Notification('🍽️ New order — ' + (order.customer_name || 'Guest'), {
@@ -2151,25 +2392,32 @@ function startRinging(order) {
           + (order.customer_phone ? ' · ' + order.customer_phone : ''),
         tag: 'ot-order-' + order.id, renotify: true
       });
-      n.onclick = () => { window.focus(); stopRinging(); };
+      // Focus the tab only — silencing requires pressing "Got it" on the modal.
+      n.onclick = () => { window.focus(); };
     } catch (e) {}
   }
-  if (_kSafetyTimer) clearTimeout(_kSafetyTimer);
-  _kSafetyTimer = setTimeout(stopRinging, 120000); // safety: never ring forever
 }
 
 function stopRinging() {
   const a = alarmEl();
   if (a) { a.pause(); a.loop = false; a.currentTime = 0; }
-  if (_kSafetyTimer) { clearTimeout(_kSafetyTimer); _kSafetyTimer = null; }
   const ack = document.getElementById('kitchen-ack-btn');
   if (ack) ack.style.display = 'none';
 }
 
-function onNewOrder(order) {
+async function onNewOrder(order) {
   if (!order || _kSeenOrderIds.has(order.id)) return;
   _kSeenOrderIds.add(order.id);
+  _kPending.push(order);
+  // Pull the line items so the modal shows the actual order, not just a total.
+  try {
+    const { data: items } = await sb.from('ot_order_items').select('*').eq('order_id', order.id);
+    if (items?.length) ITEMS_BY_ORDER[order.id] = items;
+  } catch (e) { /* summary still renders without items */ }
   if (kitchenVisible()) loadKitchen();
+  // The blocking modal is the acknowledgement mechanism — only show it when the
+  // owner wants alerts to persist until someone confirms.
+  if (ALERT_REPEAT) renderOrderModal(); else _kPending = [];
   startRinging(order);
 }
 

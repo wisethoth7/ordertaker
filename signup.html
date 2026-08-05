@@ -77,6 +77,15 @@
   .form-group input::placeholder { color: var(--text2); }
   .form-row { display: flex; gap: 12px; }
   .form-row .form-group { flex: 1; }
+  .field-hint { font-size: 11.5px; color: var(--text2); margin-top: 5px; line-height: 1.5; }
+  .plan-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .plan-opt { text-align: left; padding: 12px 14px; border-radius: 10px; cursor: pointer;
+    background: var(--card2, rgba(255,255,255,.03)); border: 2px solid var(--border); color: inherit; font: inherit; }
+  .plan-opt:hover { border-color: rgba(255,107,53,.55); }
+  .plan-opt.sel { border-color: var(--accent); background: rgba(255,107,53,.10); }
+  .plan-opt .pn { font-size: 14px; font-weight: 800; }
+  .plan-opt .pp { font-size: 17px; font-weight: 900; color: var(--accent); margin-top: 2px; }
+  .plan-opt .pm { font-size: 11px; color: var(--text2); margin-top: 2px; }
   .btn-primary {
     width: 100%; display: block; padding: 15px;
     background: var(--accent); color: #1a0000;
@@ -122,7 +131,7 @@
 <div class="signup-wrap">
   <div class="signup-eyebrow">7-DAY MONEY-BACK GUARANTEE</div>
   <h1>Start answering<br>every call <span class="highlight">today.</span></h1>
-  <p class="signup-sub">Your AI phone agent handles orders, reservations, and FAQs 24/7 — so you never miss another call. No credit card required to start your trial.</p>
+  <p class="signup-sub">Your AI phone agent handles orders, reservations, and FAQs 24/7 — so you never miss another call. Pick your plan below; you're covered by our 7-day money-back guarantee.</p>
 
   <div class="auth-tabs">
     <button class="auth-tab active" id="tab-signup" onclick="switchTab('signup')">Create account</button>
@@ -133,13 +142,50 @@
     <div id="signup-fields">
       <div class="form-row">
         <div class="form-group">
-          <label for="restaurantName">Restaurant Name</label>
+          <label for="restaurantName">Restaurant Name *</label>
           <input type="text" id="restaurantName" placeholder="e.g. Mario Kitchen" autocomplete="organization">
         </div>
         <div class="form-group">
-          <label for="ownerName">Your Name</label>
+          <label for="ownerName">Your Name *</label>
           <input type="text" id="ownerName" placeholder="John Smith" autocomplete="name">
         </div>
+      </div>
+
+      <div class="form-group">
+        <label for="ownerPhone">Your contact number *</label>
+        <input type="tel" id="ownerPhone" placeholder="(973) 555-0142" autocomplete="tel">
+        <div class="field-hint">Private — how <strong>we</strong> reach you about your account. Never given to customers.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="businessPhone">Restaurant phone number *</label>
+        <input type="tel" id="businessPhone" placeholder="(201) 555-0100" autocomplete="tel">
+        <div class="field-hint">Public — the line <strong>customers dial</strong>. You'll forward it to your AI agent, and it's the number we transfer callers back to when they need a human.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="address">Restaurant address *</label>
+        <input type="text" id="address" placeholder="123 Main St, Paterson, NJ" autocomplete="street-address">
+        <div class="field-hint">The agent reads this out when customers ask where you are.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Opening hours *</label>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <input type="time" id="openTime" value="11:00" aria-label="Opening time">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <input type="time" id="closeTime" value="22:00" aria-label="Closing time">
+          </div>
+        </div>
+        <div class="field-hint">Applied to every day for now — you can set per-day hours in your dashboard. The agent auto-pauses outside these hours.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Choose your plan *</label>
+        <div id="planPicker" class="plan-picker"></div>
+        <div class="field-hint">You'll be taken to secure checkout after your account is created. Cancel any time — 7-day money-back guarantee.</div>
       </div>
     </div>
 
@@ -191,6 +237,29 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentMode = 'signup';
 
+// Plan prices/minutes mirror ot_provision_signup in Postgres, which is the source
+// of truth — it re-derives price server-side and rejects anything not in this list.
+const PLANS = [
+  { id: 'starter',    name: 'Starter',    price: 199, minutes: 1000, url: 'https://buy.stripe.com/00wcMY5LK9bLcd39cv18c05' },
+  { id: 'pro',        name: 'Pro',        price: 299, minutes: 2000, url: 'https://buy.stripe.com/cNi8wIca83Rr6SJfAT18c01' },
+  { id: 'business',   name: 'Business',   price: 499, minutes: 3500, url: 'https://buy.stripe.com/5kQ28kdec2Nn3Gx2O718c06' },
+  { id: 'enterprise', name: 'Enterprise', price: 799, minutes: 6000, url: 'https://buy.stripe.com/aFa7sE8XWafP4KB3Sb18c07' },
+];
+let selectedPlan = null;
+
+function renderPlans() {
+  const host = document.getElementById('planPicker');
+  if (!host) return;
+  host.innerHTML = PLANS.map(p => `
+    <button type="button" class="plan-opt${selectedPlan === p.id ? ' sel' : ''}" data-plan="${p.id}" onclick="pickPlan('${p.id}')">
+      <div class="pn">${p.name}</div>
+      <div class="pp">$${p.price}<span style="font-size:11px;font-weight:600;color:var(--text2)">/mo</span></div>
+      <div class="pm">${p.minutes.toLocaleString()} minutes included</div>
+    </button>`).join('');
+}
+function pickPlan(id) { selectedPlan = id; renderPlans(); }
+renderPlans();
+
 // Handle password recovery email link
 const _recoveryMode = new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery';
 sb.auth.onAuthStateChange((event) => {
@@ -203,7 +272,10 @@ sb.auth.onAuthStateChange((event) => {
 (async () => {
   if (_recoveryMode) return;
   const { data: { session } } = await sb.auth.getSession();
-  if (session) window.location.replace('dashboard.html');
+  if (session) {
+    await finishPendingSignup();
+    window.location.replace('dashboard.html');
+  }
 })();
 
 function switchTab(mode) {
@@ -241,6 +313,8 @@ async function submitAuth() {
       showMsg(error.message || 'Login failed. Check your credentials.', 'error');
       btn.disabled = false; btn.textContent = 'Log In';
     } else {
+      // Finish provisioning if email confirmation interrupted the original signup.
+      await finishPendingSignup();
       window.location.replace('dashboard.html');
     }
     return;
@@ -252,12 +326,42 @@ async function submitAuth() {
     btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
-  const restaurantName = document.getElementById('restaurantName').value.trim();
-  const ownerName = document.getElementById('ownerName').value.trim();
-  if (!restaurantName || !ownerName) {
-    showMsg('Please enter your restaurant name and your name.', 'error');
+  // Every field below is required. The same checks run again inside
+  // ot_provision_signup, so a half-filled restaurant can never be provisioned.
+  const v = id => document.getElementById(id).value.trim();
+  const restaurantName = v('restaurantName');
+  const ownerName      = v('ownerName');
+  const ownerPhone     = v('ownerPhone');
+  const businessPhone  = v('businessPhone');
+  const address        = v('address');
+  const openTime       = v('openTime');
+  const closeTime      = v('closeTime');
+
+  const missing = [
+    [restaurantName, 'restaurant name'], [ownerName, 'your name'],
+    [ownerPhone, 'your contact number'], [businessPhone, 'restaurant phone number'],
+    [address, 'restaurant address'], [openTime, 'opening time'], [closeTime, 'closing time'],
+  ].filter(([val]) => !val).map(([, label]) => label);
+  if (missing.length) {
+    showMsg('Please fill in: ' + missing.join(', ') + '.', 'error');
     btn.disabled = false; btn.textContent = 'Create Account';
     return;
+  }
+  if (!selectedPlan) {
+    showMsg('Please choose a plan.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Account';
+    return;
+  }
+  const digits = s => s.replace(/\D/g, '').length;
+  if (digits(ownerPhone) < 10 || digits(businessPhone) < 10) {
+    showMsg('Please enter full 10-digit phone numbers.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Account';
+    return;
+  }
+
+  const hours = {};
+  for (const d of ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']) {
+    hours[d] = { open: openTime, close: closeTime };
   }
 
   const { data, error } = await sb.auth.signUp({ email, password });
@@ -270,22 +374,71 @@ async function submitAuth() {
   // Fire the branded welcome email (non-blocking — don't hold up signup)
   if (data.user) {
     sb.functions.invoke('send-welcome-email', {
-      body: { to: email, name: ownerName, product: 'ordertaker', plan: 'starter' }
+      body: { to: email, name: ownerName, product: 'ordertaker', plan: selectedPlan }
     }).catch(() => {});
   }
 
   if (data.user && !data.session) {
-    // Email confirmation required
+    // Email confirmation required. Keep the details so provisioning can finish on
+    // first login instead of losing everything the owner just typed.
+    localStorage.setItem('ot_pending_signup', JSON.stringify({
+      restaurantName, ownerName, ownerPhone, businessPhone, address, hours, plan: selectedPlan
+    }));
     showMsg('Check your email to confirm your account, then come back here to log in.', 'success');
     btn.disabled = false; btn.textContent = 'Create Account';
     return;
   }
 
-  // Session exists — create the restaurant row via RPC (ONE RULE)
-  const { error: restErr } = await sb.rpc('ensure_restaurant', { p_name: restaurantName || null, p_phone: null });
-  if (restErr) console.warn('ensure_restaurant failed:', restErr.message);
+  // Session exists — provision atomically: writes ot_signups, links signup_id and
+  // user_id onto the restaurant, sets the chosen plan and trial_ends_at.
+  const { error: provErr } = await sb.rpc('ot_provision_signup', {
+    p_restaurant_name: restaurantName,
+    p_owner_name: ownerName,
+    p_owner_phone: ownerPhone,
+    p_business_phone: businessPhone,
+    p_address: address,
+    p_hours: hours,
+    p_plan: selectedPlan,
+  });
+  if (provErr) {
+    showMsg(provErr.message || 'Could not finish setting up your restaurant.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Account';
+    return;
+  }
+  localStorage.removeItem('ot_pending_signup');
 
-  window.location.replace('dashboard.html');
+  // Straight to checkout — the account exists but is on a 7-day trial with no
+  // payment method until this completes.
+  goToCheckout(selectedPlan);
+}
+
+function goToCheckout(planId) {
+  const plan = PLANS.find(p => p.id === planId);
+  if (!plan) { window.location.replace('dashboard.html'); return; }
+  showMsg('Account created — taking you to secure checkout…', 'success');
+  const email = document.getElementById('email').value.trim();
+  const url = plan.url + (plan.url.includes('?') ? '&' : '?')
+    + 'prefilled_email=' + encodeURIComponent(email);
+  setTimeout(() => { window.location.href = url; }, 900);
+}
+
+// If email confirmation interrupted signup, finish provisioning on first login.
+async function finishPendingSignup() {
+  const raw = localStorage.getItem('ot_pending_signup');
+  if (!raw) return false;
+  let p; try { p = JSON.parse(raw); } catch { localStorage.removeItem('ot_pending_signup'); return false; }
+  const { error } = await sb.rpc('ot_provision_signup', {
+    p_restaurant_name: p.restaurantName,
+    p_owner_name: p.ownerName,
+    p_owner_phone: p.ownerPhone,
+    p_business_phone: p.businessPhone,
+    p_address: p.address,
+    p_hours: p.hours,
+    p_plan: p.plan,
+  });
+  if (error) { console.warn('deferred provisioning failed:', error.message); return false; }
+  localStorage.removeItem('ot_pending_signup');
+  return true;
 }
 
 function showForgot() {
