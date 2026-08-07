@@ -164,9 +164,27 @@
       </div>
 
       <div class="form-group">
-        <label for="address">Restaurant address *</label>
-        <input type="text" id="address" placeholder="123 Main St, Paterson, NJ" autocomplete="street-address">
-        <div class="field-hint">The agent reads this out when customers ask where you are.</div>
+        <label for="staffTransfer">Staff transfer number *</label>
+        <input type="tel" id="staffTransfer" placeholder="(973) 555-0188" autocomplete="tel">
+        <div class="field-hint">Where the agent transfers a caller who needs a person — including card payments. Can be the same as your restaurant number.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="address">Street address *</label>
+          <input type="text" id="address" placeholder="123 Main St" autocomplete="street-address">
+        </div>
+        <div class="form-group">
+          <label for="city">City *</label>
+          <input type="text" id="city" placeholder="Paterson, NJ" autocomplete="address-level2">
+        </div>
+      </div>
+      <div class="field-hint" style="margin-top:-8px;margin-bottom:14px">The agent reads this out when customers ask where you are.</div>
+
+      <div class="form-group">
+        <label>Languages your agent should speak *</label>
+        <div id="langPicker" class="plan-picker" style="grid-template-columns:1fr 1fr 1fr"></div>
+        <div class="field-hint">English is always included. Pick any others your customers speak.</div>
       </div>
 
       <div class="form-group">
@@ -260,6 +278,27 @@ function renderPlans() {
 function pickPlan(id) { selectedPlan = id; renderPlans(); }
 renderPlans();
 
+// English is always on; the rest are opt-in. Stored on ot_restaurants.languages.
+const LANGS = [['en','English'],['es','Spanish'],['ar','Arabic'],['fr','French'],['pt','Portuguese'],['zh','Chinese']];
+let selectedLangs = ['en'];
+function renderLangs() {
+  const host = document.getElementById('langPicker');
+  if (!host) return;
+  host.innerHTML = LANGS.map(([code, name]) => {
+    const on = selectedLangs.includes(code);
+    const locked = code === 'en';
+    return `<button type="button" class="plan-opt${on ? ' sel' : ''}" style="${locked ? 'cursor:default;opacity:.85' : ''}"
+      onclick="${locked ? '' : `toggleLang('${code}')`}"><div class="pn">${name}</div></button>`;
+  }).join('');
+}
+function toggleLang(code) {
+  selectedLangs = selectedLangs.includes(code)
+    ? selectedLangs.filter(c => c !== code)
+    : [...selectedLangs, code];
+  renderLangs();
+}
+renderLangs();
+
 // Handle password recovery email link
 const _recoveryMode = new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery';
 sb.auth.onAuthStateChange((event) => {
@@ -334,13 +373,18 @@ async function submitAuth() {
   const ownerPhone     = v('ownerPhone');
   const businessPhone  = v('businessPhone');
   const address        = v('address');
+  const city           = v('city');
+  const staffTransfer  = v('staffTransfer');
   const openTime       = v('openTime');
   const closeTime      = v('closeTime');
+  const languages      = selectedLangs.slice();
 
   const missing = [
     [restaurantName, 'restaurant name'], [ownerName, 'your name'],
     [ownerPhone, 'your contact number'], [businessPhone, 'restaurant phone number'],
-    [address, 'restaurant address'], [openTime, 'opening time'], [closeTime, 'closing time'],
+    [staffTransfer, 'staff transfer number'],
+    [address, 'street address'], [city, 'city'],
+    [openTime, 'opening time'], [closeTime, 'closing time'],
   ].filter(([val]) => !val).map(([, label]) => label);
   if (missing.length) {
     showMsg('Please fill in: ' + missing.join(', ') + '.', 'error');
@@ -353,7 +397,7 @@ async function submitAuth() {
     return;
   }
   const digits = s => s.replace(/\D/g, '').length;
-  if (digits(ownerPhone) < 10 || digits(businessPhone) < 10) {
+  if (digits(ownerPhone) < 10 || digits(businessPhone) < 10 || digits(staffTransfer) < 10) {
     showMsg('Please enter full 10-digit phone numbers.', 'error');
     btn.disabled = false; btn.textContent = 'Create Account';
     return;
@@ -382,7 +426,8 @@ async function submitAuth() {
     // Email confirmation required. Keep the details so provisioning can finish on
     // first login instead of losing everything the owner just typed.
     localStorage.setItem('ot_pending_signup', JSON.stringify({
-      restaurantName, ownerName, ownerPhone, businessPhone, address, hours, plan: selectedPlan
+      restaurantName, ownerName, ownerPhone, businessPhone, staffTransfer,
+      address, city, languages, hours, plan: selectedPlan
     }));
     showMsg('Check your email to confirm your account, then come back here to log in.', 'success');
     btn.disabled = false; btn.textContent = 'Create Account';
@@ -399,6 +444,9 @@ async function submitAuth() {
     p_address: address,
     p_hours: hours,
     p_plan: selectedPlan,
+    p_staff_transfer: staffTransfer,
+    p_city: city,
+    p_languages: languages,
   });
   if (provErr) {
     showMsg(provErr.message || 'Could not finish setting up your restaurant.', 'error');
@@ -435,6 +483,9 @@ async function finishPendingSignup() {
     p_address: p.address,
     p_hours: p.hours,
     p_plan: p.plan,
+    p_staff_transfer: p.staffTransfer,
+    p_city: p.city,
+    p_languages: p.languages,
   });
   if (error) { console.warn('deferred provisioning failed:', error.message); return false; }
   localStorage.removeItem('ot_pending_signup');

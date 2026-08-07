@@ -549,6 +549,8 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
   <!-- STATUS BANNER -->
   <div id="menu-status" style="display:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:20px"></div>
+  <!-- Editable preview of an import. Nothing is written until the owner saves. -->
+  <div id="menu-preview" style="display:none"></div>
 
   <!-- UPLOAD ZONE -->
   <div id="menu-drop-zone"
@@ -559,8 +561,9 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     <div style="font-size:32px;margin-bottom:10px">📄</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Drag &amp; drop your menu here</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px">PDF, CSV, JPG, or PNG</div>
-    <input type="file" id="menu-file-input" accept=".pdf,.csv,.jpg,.jpeg,.png" style="display:none" onchange="handleMenuFile(this.files[0])">
-    <button id="menu-upload-btn" onclick="document.getElementById('menu-file-input').click()" style="padding:10px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Upload Menu File</button>
+    <input type="file" id="menu-file-input" multiple accept=".pdf,.csv,.xlsx,.xls,.jpg,.jpeg,.png,.webp,.heic,.heif" style="display:none" onchange="handleMenuFiles(this.files)">
+    <button id="menu-upload-btn" onclick="document.getElementById('menu-file-input').click()" style="padding:10px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Upload Menu</button>
+    <div style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5">Photo of your menu, screenshot, PDF, or spreadsheet. Select several photos at once for a multi-page menu.<br>You'll review everything before it's saved.</div>
   </div>
 
   <!-- SAVED ITEMS (from DB) -->
@@ -606,71 +609,164 @@ function clearMenuStatus() {
   el.style.display = 'none';
 }
 
-// ── file upload + parse ───────────────────────────────────────────────────────
-async function handleMenuFile(file) {
-  if (!file) return;
+// ── menu import: upload → extract → EDITABLE PREVIEW → commit ─────────────────
+// Extracted data is never written straight to the menu. A wrong price here is a
+// wrong price read aloud to a paying customer, so the owner corrects it first.
+const MENU_EXTS = ['pdf','csv','xlsx','xls','jpg','jpeg','png','webp','heic','heif'];
+let MENU_DRAFT = [];
+
+// Storage keys reject spaces and most punctuation. The extension must survive —
+// ordertaker-parse-menu picks PDF vs image vs spreadsheet off the end of the key.
+function storageKeyFor(file) {
+  const parts = file.name.split('.');
+  const ext = (parts.length > 1 ? parts.pop() : '').toLowerCase();
+  const base = parts.join('.');
+  const safeBase = base
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip accents
+    .replace(/[^A-Za-z0-9._-]+/g, '-')                    // brief 1.2: allowed set
+    .replace(/-{2,}/g, '-')                               // collapse repeats
+    .replace(/^[-.]+|[-.]+$/g, '')
+    .toLowerCase()
+    .slice(0, 60) || 'menu';
+  return RESTAURANT_ID + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '_' + safeBase + (ext ? '.' + ext : '');
+}
+
+async function handleMenuFiles(fileList) {
+  const files = Array.from(fileList || []);
+  document.getElementById('menu-file-input').value = '';
+  if (!files.length) return;
   if (!RESTAURANT_ID) { setMenuStatus('No restaurant loaded — please refresh the page.', 'error'); return; }
 
-  // reset so the same file can be re-selected
-  document.getElementById('menu-file-input').value = '';
-
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['pdf','csv','jpg','jpeg','png'].includes(ext)) {
-    setMenuStatus('Unsupported format — please upload a PDF, CSV, JPG, or PNG.', 'error');
+  const bad = files.filter(f => !MENU_EXTS.includes((f.name.split('.').pop() || '').toLowerCase()));
+  if (bad.length) {
+    setMenuStatus('Unsupported file: ' + bad[0].name + ' — use a photo, screenshot, PDF, or spreadsheet.', 'error');
     return;
   }
 
   const btn = document.getElementById('menu-upload-btn');
   btn.disabled = true;
-
-  // step 1: upload to storage
-  setMenuStatus('Uploading ' + file.name + '…', 'loading');
   document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.5)';
 
-  // Supabase storage keys reject spaces and most punctuation, so slugify the name.
-  // The extension must survive — ordertaker-parse-menu picks PDF vs image vs CSV
-  // off the end of file_path.
-  const base = file.name.slice(0, file.name.length - ext.length - 1);
-  const safeBase = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'menu';
-  const filePath = RESTAURANT_ID + '/' + Date.now() + '_' + safeBase + '.' + ext;
-  const { error: uploadErr } = await sb.storage
-    .from('ot-menu-uploads')
-    .upload(filePath, file, { upsert: true });
+  const paths = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      setMenuStatus(`Uploading ${files[i].name} (${i + 1} of ${files.length})…`, 'loading');
+      const key = storageKeyFor(files[i]);
+      const { error } = await sb.storage.from('ot-menu-uploads').upload(key, files[i], {
+        upsert: true,
+        // Keep the name the owner recognises; the key itself has to stay slugified.
+        metadata: { original_name: files[i].name },
+      });
+      if (error) throw new Error(`${files[i].name}: ${error.message}`);
+      paths.push(key);
+    }
 
-  if (uploadErr) {
-    setMenuStatus('Upload failed: ' + uploadErr.message, 'error');
+    setMenuStatus(files.length > 1 ? `Reading ${files.length} pages…` : 'Reading your menu…', 'loading');
+    const { data, error: fnErr } = await sb.functions.invoke('ordertaker-parse-menu', {
+      body: { restaurant_id: RESTAURANT_ID, file_paths: paths, mode: 'extract' },
+    });
+    if (fnErr || data?.error) throw new Error(data?.error || fnErr.message);
+
+    MENU_DRAFT = (data.items || []).map((it, i) => ({ ...it, _id: i, _keep: true }));
+    (data.warnings || []).forEach(w => showToast(w));
+    renderMenuPreview();
+    setMenuStatus('', '');
+  } catch (e) {
+    setMenuStatus('Could not read that menu: ' + e.message, 'error');
+  } finally {
     document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
     btn.disabled = false;
-    return;
   }
+}
 
-  // step 2: invoke parse function
-  setMenuStatus('Reading your menu…', 'loading');
+function renderMenuPreview() {
+  const host = document.getElementById('menu-preview');
+  if (!host) return;
+  if (!MENU_DRAFT.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
 
-  const { data: fnData, error: fnErr } = await sb.functions.invoke('ordertaker-parse-menu', {
-    body: { restaurant_id: RESTAURANT_ID, file_path: filePath },
+  const kept = MENU_DRAFT.filter(i => i._keep);
+  const noPrice = kept.filter(i => !(Number(i.price) > 0)).length;
+  const flagged = kept.filter(i => i.needs_review).length;
+
+  const rows = MENU_DRAFT.map(it => {
+    const bad = it._keep && !(Number(it.price) > 0);
+    return `<tr style="border-bottom:1px solid var(--border);${it._keep ? '' : 'opacity:.35'}">
+      <td style="padding:6px 4px"><input type="checkbox" ${it._keep ? 'checked' : ''} onchange="menuEdit(${it._id},'_keep',this.checked)"></td>
+      <td style="padding:6px 4px"><input value="${escapeHtml(it.name)}" oninput="menuEdit(${it._id},'name',this.value)" style="width:100%;min-width:150px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:13px"></td>
+      <td style="padding:6px 4px"><input type="number" step="0.01" min="0" value="${it.price ?? ''}" placeholder="—" oninput="menuEdit(${it._id},'price',this.value)" style="width:90px;background:var(--card2);border:1px solid ${bad ? 'var(--accent)' : 'var(--border)'};border-radius:6px;padding:6px 8px;color:${bad ? 'var(--accent)' : 'var(--text)'};font-size:13px;font-weight:700"></td>
+      <td style="padding:6px 4px"><input value="${escapeHtml(it.category || '')}" oninput="menuEdit(${it._id},'category',this.value)" style="width:120px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:13px"></td>
+      <td style="padding:6px 4px;text-align:center"><input type="checkbox" ${it.is_popular ? 'checked' : ''} onchange="menuEdit(${it._id},'is_popular',this.checked)" title="Bestseller"></td>
+      <td style="padding:6px 4px;font-size:11px;color:${it.needs_review ? 'var(--accent)' : 'var(--text2)'};max-width:180px">${escapeHtml(it.note || '')}</td>
+    </tr>`;
+  }).join('');
+
+  host.style.display = 'block';
+  host.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:900;margin-bottom:4px">Check your menu before saving</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">
+        ${kept.length} item${kept.length === 1 ? '' : 's'} ready.
+        ${flagged ? `<span style="color:var(--accent);font-weight:700">${flagged} need${flagged === 1 ? 's' : ''} your attention.</span>` : ''}
+        ${noPrice ? `<span style="color:var(--accent);font-weight:700">${noPrice} still ${noPrice === 1 ? 'has' : 'have'} no price and won't be saved.</span>` : ''}
+        Nothing is written to your live menu until you press Save.
+      </div>
+      <div style="overflow-x:auto;max-height:52vh;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="text-align:left;color:var(--text2);font-size:11px;font-weight:800;letter-spacing:.5px">
+            <th style="padding:6px 4px">SAVE</th><th style="padding:6px 4px">ITEM</th><th style="padding:6px 4px">PRICE</th>
+            <th style="padding:6px 4px">CATEGORY</th><th style="padding:6px 4px">★</th><th style="padding:6px 4px">NOTE</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button onclick="commitMenuDraft()" style="padding:11px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Save ${kept.length - noPrice} items to my menu</button>
+        <button onclick="MENU_DRAFT=[];renderMenuPreview();" style="padding:11px 22px;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Discard</button>
+      </div>
+    </div>`;
+}
+
+function menuEdit(id, field, value) {
+  const it = MENU_DRAFT.find(x => x._id === id);
+  if (!it) return;
+  if (field === 'price') {
+    const n = parseFloat(value);
+    it.price = Number.isFinite(n) && n > 0 ? n : null;
+    if (it.price) { it.needs_review = false; it.note = null; }
+  } else {
+    it[field] = value;
+  }
+  // Re-render only for changes that alter the counts/enabled state.
+  if (field === 'price' || field === '_keep') renderMenuPreview();
+}
+
+async function commitMenuDraft() {
+  const items = MENU_DRAFT.filter(i => i._keep && Number(i.price) > 0);
+  if (!items.length) { setMenuStatus('Add a price to at least one item before saving.', 'error'); return; }
+  setMenuStatus('Saving your menu…', 'loading');
+  const { data, error } = await sb.functions.invoke('ordertaker-parse-menu', {
+    body: { restaurant_id: RESTAURANT_ID, mode: 'commit', items, replace: true },
   });
+  if (error || data?.error) { setMenuStatus('Could not save: ' + (data?.error || error.message), 'error'); return; }
 
-  document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
-  btn.disabled = false;
-
-  if (fnErr || fnData?.error) {
-    setMenuStatus('Could not read menu: ' + (fnData?.error || fnErr.message), 'error');
-    return;
-  }
-
-  if (fnData?.ok) {
-    const n = fnData.items_added ?? 0;
-    setMenuStatus('✓ ' + n + ' item' + (n !== 1 ? 's' : '') + ' added to your menu.', 'success');
-    await loadMenuItems();
-  }
+  MENU_DRAFT = [];
+  renderMenuPreview();
+  const f = data.followups || {};
+  let msg = `✓ ${data.items_added} item${data.items_added === 1 ? '' : 's'} saved.`;
+  if (data.skipped?.length) msg += ` ${data.skipped.length} skipped for having no price.`;
+  // An empty upsell_suggestion is why the agent never upsells, so say so here.
+  const todo = [];
+  if (f.needs_popular) todo.push('mark 3–5 bestsellers with ★');
+  if (f.missing_upsell) todo.push(`add an upsell note to ${f.missing_upsell} item${f.missing_upsell === 1 ? '' : 's'} (the agent can only upsell items that have one)`);
+  if (todo.length) msg += ' Next: ' + todo.join(', ') + '.';
+  setMenuStatus(msg, 'success');
+  await loadMenuItems();
 }
 
 function handleMenuDrop(e) {
   e.preventDefault();
   document.getElementById('menu-drop-zone').style.borderColor = 'rgba(255,107,53,.3)';
-  const file = e.dataTransfer.files[0];
-  if (file) handleMenuFile(file);
+  if (e.dataTransfer.files?.length) handleMenuFiles(e.dataTransfer.files);
 }
 
 // ── load + render saved items from DB ─────────────────────────────────────────
