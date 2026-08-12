@@ -2521,7 +2521,76 @@ init();
 <script>
 initRa({
   accentColor: '#FF6B35',
-  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help restaurant owners with: reading call logs and order history, understanding the Setup Checklist, Plan & Billing tab (upgrade or view usage), staff phone management, menu uploads, and alert settings. For billing or account issues, direct to support@niledreamsdigital.com.'
+  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help restaurant owners with: reading call logs and order history, understanding the Setup Checklist, Plan & Billing tab (upgrade or view usage), staff phone management, menu uploads, and alert settings. For billing or account issues, direct to support@niledreamsdigital.com.\n\nYou can make three changes for the owner using your tools: set the daily special, set temporary wait times, and mark an item as sold out or back in stock. All three expire on their own so nothing is left set by mistake. Anything else — menu prices, hours, staff numbers, billing — you cannot change; point the owner to the right tab instead.',
+
+  // Three real actions, each backed by an ownership-checked RPC. Everything else
+  // Ra is asked to "do" it must decline rather than narrate.
+  tools: [
+    {
+      name: 'set_daily_special',
+      description: "Set or clear the restaurant's daily special, which the phone agent tells callers about. Auto-expires. Use this for 'today's special is X'. To clear it, pass an empty text.",
+      input_schema: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: "The special, e.g. 'Chicken and rice, $12'. Empty string clears it." },
+          hours: { type: 'number', description: 'Hours until it expires. Default 14 (rest of the service day).' },
+        },
+        required: ['text'],
+      },
+    },
+    {
+      name: 'set_wait_times',
+      description: "Temporarily override quoted pickup and delivery wait times, for when the kitchen is slammed. Auto-expires. Use for 'we're backed up, make it 45 minutes'.",
+      input_schema: {
+        type: 'object',
+        properties: {
+          pickup_minutes: { type: 'number', description: 'Pickup wait in minutes.' },
+          delivery_minutes: { type: 'number', description: 'Delivery wait in minutes.' },
+          hours: { type: 'number', description: 'Hours until it expires. Default 3.' },
+        },
+        required: ['pickup_minutes', 'delivery_minutes'],
+      },
+    },
+    {
+      name: 'set_item_availability',
+      description: "Mark a menu item sold out (86 it) or back in stock. Matches the item name loosely. Use for 'we're out of falafel'.",
+      input_schema: {
+        type: 'object',
+        properties: {
+          item_name: { type: 'string', description: 'The menu item, e.g. "falafel".' },
+          available: { type: 'boolean', description: 'false = sold out, true = back in stock.' },
+        },
+        required: ['item_name', 'available'],
+      },
+    },
+  ],
+
+  // Returns the RPC's actual return string verbatim — Ra is instructed to quote
+  // it rather than paraphrase, so it cannot dress a failure up as a success.
+  onToolCall: async (name, input) => {
+    if (!RESTAURANT_ID) return 'No restaurant is selected, so nothing was changed.';
+    const call = async (fn, args) => {
+      const { data, error } = await sb.rpc(fn, { p_restaurant_id: RESTAURANT_ID, ...args });
+      if (error) return 'That did not work and nothing was changed: ' + error.message;
+      return String(data ?? 'The change did not report a result, so treat it as not saved.');
+    };
+    if (name === 'set_daily_special') {
+      return await call('ot_ra_set_specials', { p_text: input.text ?? '', p_hours: input.hours ?? 14 });
+    }
+    if (name === 'set_wait_times') {
+      return await call('ot_ra_set_wait_override', {
+        p_pickup: Math.round(Number(input.pickup_minutes)),
+        p_delivery: Math.round(Number(input.delivery_minutes)),
+        p_hours: input.hours ?? 3,
+      });
+    }
+    if (name === 'set_item_availability') {
+      return await call('ot_ra_set_item_availability', {
+        p_item: input.item_name, p_available: !!input.available,
+      });
+    }
+    return 'There is no tool for that, so nothing was changed.';
+  },
 });
 </script>
 </body>
