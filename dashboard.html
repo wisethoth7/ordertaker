@@ -614,6 +614,10 @@ function clearMenuStatus() {
 // wrong price read aloud to a paying customer, so the owner corrects it first.
 const MENU_EXTS = ['pdf','csv','xlsx','xls','jpg','jpeg','png','webp','heic','heif'];
 let MENU_DRAFT = [];
+// Owners photograph 3–5 pages, so adding is the normal case. Replacing deletes
+// the whole menu and has to be chosen deliberately.
+let MENU_REPLACE = false;
+let MENU_EXISTING_COUNT = 0;
 
 // Storage keys reject spaces and most punctuation. The extension must survive —
 // ordertaker-parse-menu picks PDF vs image vs spreadsheet off the end of the key.
@@ -712,7 +716,13 @@ async function handleMenuFiles(fileList) {
       throw new Error(parts.filter(Boolean).join(' — '));
     }
 
-    MENU_DRAFT = (payload.items || []).map((it, i) => ({ ...it, _id: i, _keep: true }));
+    MENU_EXISTING_COUNT = payload.existing_menu_count || 0;
+    MENU_REPLACE = false;  // always default to adding
+    // Pre-uncheck anything already on the menu so an "Add" import doesn't
+    // silently try to re-add page 1's items.
+    MENU_DRAFT = (payload.items || []).map((it, i) => ({
+      ...it, _id: i, _keep: !it.already_on_menu,
+    }));
     (payload.warnings || []).forEach(w => showToast(w));
     if (payload.truncated) showToast('That menu was long — check the end of the list for missing items.');
     renderMenuPreview();
@@ -765,12 +775,31 @@ function renderMenuPreview() {
           <tbody>${rows}</tbody>
         </table>
       </div>
+      ${MENU_EXISTING_COUNT ? `
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.5px;margin-bottom:8px">YOU ALREADY HAVE ${MENU_EXISTING_COUNT} ITEM${MENU_EXISTING_COUNT === 1 ? '' : 'S'} ON YOUR MENU</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button type="button" onclick="setMenuReplace(false)" style="text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font:inherit;color:inherit;
+            background:${!MENU_REPLACE ? 'rgba(255,107,53,.10)' : 'var(--card2)'};border:2px solid ${!MENU_REPLACE ? 'var(--accent)' : 'var(--border)'}">
+            <div style="font-size:13px;font-weight:800">Add to my menu</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:2px">Keeps what's there. Best for a multi-page menu.</div>
+          </button>
+          <button type="button" onclick="setMenuReplace(true)" style="text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font:inherit;color:inherit;
+            background:${MENU_REPLACE ? 'rgba(255,107,53,.10)' : 'var(--card2)'};border:2px solid ${MENU_REPLACE ? 'var(--accent)' : 'var(--border)'}">
+            <div style="font-size:13px;font-weight:800">Replace my whole menu</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:2px">Deletes all ${MENU_EXISTING_COUNT} existing items first.</div>
+          </button>
+        </div>
+        ${MENU_REPLACE ? `<div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--accent)">⚠️ Your current ${MENU_EXISTING_COUNT} items will be deleted and cannot be recovered.</div>` : ''}
+      </div>` : ''}
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-        <button onclick="commitMenuDraft()" style="padding:11px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Save ${kept.length - noPrice} items to my menu</button>
+        <button onclick="commitMenuDraft()" style="padding:11px 22px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">${MENU_REPLACE ? 'Replace menu with' : 'Add'} ${kept.length - noPrice} item${(kept.length - noPrice) === 1 ? '' : 's'}</button>
         <button onclick="MENU_DRAFT=[];renderMenuPreview();" style="padding:11px 22px;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Discard</button>
       </div>
     </div>`;
 }
+
+function setMenuReplace(on) { MENU_REPLACE = !!on; renderMenuPreview(); }
 
 function menuEdit(id, field, value) {
   const it = MENU_DRAFT.find(x => x._id === id);
@@ -791,7 +820,7 @@ async function commitMenuDraft() {
   if (!items.length) { setMenuStatus('Add a price to at least one item before saving.', 'error'); return; }
   setMenuStatus('Saving your menu…', 'loading');
   let { data, error } = await sb.functions.invoke('ordertaker-parse-menu', {
-    body: { restaurant_id: RESTAURANT_ID, mode: 'commit', items, replace: true },
+    body: { restaurant_id: RESTAURANT_ID, mode: 'commit', items, replace: MENU_REPLACE },
   });
   let payload = data;
   if (error && typeof error.context?.json === 'function') {
@@ -805,10 +834,15 @@ async function commitMenuDraft() {
   data = payload;
 
   MENU_DRAFT = [];
+  MENU_REPLACE = false;
   renderMenuPreview();
   const f = data.followups || {};
-  let msg = `✓ ${data.items_added} item${data.items_added === 1 ? '' : 's'} saved.`;
-  if (data.skipped?.length) msg += ` ${data.skipped.length} skipped for having no price.`;
+  let msg = data.replaced
+    ? `✓ Menu replaced — ${data.items_added} item${data.items_added === 1 ? '' : 's'} now on your menu.`
+    : `✓ ${data.items_added} item${data.items_added === 1 ? '' : 's'} added — ${data.menu_total} on your menu now.`;
+  if (data.duplicates_skipped) msg += ` ${data.duplicates_skipped} already there.`;
+  const noPriceSkipped = (data.skipped || []).filter(s => s.reason === 'no valid price').length;
+  if (noPriceSkipped) msg += ` ${noPriceSkipped} skipped for having no price.`;
   // An empty upsell_suggestion is why the agent never upsells, so say so here.
   const todo = [];
   if (f.needs_popular) todo.push('mark 3–5 bestsellers with ★');
