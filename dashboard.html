@@ -631,6 +631,27 @@ function storageKeyFor(file) {
   return RESTAURANT_ID + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '_' + safeBase + (ext ? '.' + ext : '');
 }
 
+// heic2any is loaded on demand from jsdelivr, which the CSP script-src already
+// allows. Conversion happens entirely in the browser — the file never leaves the
+// device before it becomes a JPEG.
+function loadHeic2Any() {
+  if (window.heic2any) return Promise.resolve(window.heic2any);
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.onload = () => window.heic2any ? resolve(window.heic2any) : reject(new Error('heic2any missing'));
+    s.onerror = () => reject(new Error('could not load the HEIC converter'));
+    document.head.appendChild(s);
+  });
+}
+
+async function convertHeic(file) {
+  const heic2any = await loadHeic2Any();
+  const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+  const out = Array.isArray(blob) ? blob[0] : blob;
+  return new File([out], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
+}
+
 async function handleMenuFiles(fileList) {
   const files = Array.from(fileList || []);
   document.getElementById('menu-file-input').value = '';
@@ -650,14 +671,25 @@ async function handleMenuFiles(fileList) {
   const paths = [];
   try {
     for (let i = 0; i < files.length; i++) {
-      setMenuStatus(`Uploading ${files[i].name} (${i + 1} of ${files.length})…`, 'loading');
-      const key = storageKeyFor(files[i]);
-      const { error } = await sb.storage.from('ot-menu-uploads').upload(key, files[i], {
+      let file = files[i];
+      // iPhones shoot HEIC by default and vision can't read it, so convert before
+      // upload rather than letting the owner hit a wall after waiting.
+      if (/\.hei[cf]$/i.test(file.name)) {
+        setMenuStatus(`Converting ${file.name}…`, 'loading');
+        try {
+          file = await convertHeic(file);
+        } catch (e) {
+          throw new Error(`${files[i].name} is a HEIC photo and couldn't be converted. On iPhone: Settings > Camera > Formats > Most Compatible, or send a screenshot instead.`);
+        }
+      }
+      setMenuStatus(`Uploading ${file.name} (${i + 1} of ${files.length})…`, 'loading');
+      const key = storageKeyFor(file);
+      const { error } = await sb.storage.from('ot-menu-uploads').upload(key, file, {
         upsert: true,
         // Keep the name the owner recognises; the key itself has to stay slugified.
         metadata: { original_name: files[i].name },
       });
-      if (error) throw new Error(`${files[i].name}: ${error.message}`);
+      if (error) throw new Error(`${file.name}: ${error.message}`);
       paths.push(key);
     }
 
@@ -665,10 +697,24 @@ async function handleMenuFiles(fileList) {
     const { data, error: fnErr } = await sb.functions.invoke('ordertaker-parse-menu', {
       body: { restaurant_id: RESTAURANT_ID, file_paths: paths, mode: 'extract' },
     });
-    if (fnErr || data?.error) throw new Error(data?.error || fnErr.message);
 
-    MENU_DRAFT = (data.items || []).map((it, i) => ({ ...it, _id: i, _keep: true }));
-    (data.warnings || []).forEach(w => showToast(w));
+    // supabase-js turns a non-2xx into FunctionsHttpError and hides the body, but
+    // our 422s carry the actual explanation — read it before falling back.
+    let payload = data;
+    if (fnErr && typeof fnErr.context?.json === 'function') {
+      try { payload = await fnErr.context.json(); } catch (_) { /* keep generic */ }
+    }
+    if (payload?.error || fnErr) {
+      const parts = [payload?.error || fnErr.message];
+      if (payload?.detail) parts.push(String(payload.detail).slice(0, 300));
+      if (payload?.raw) parts.push('Model returned: ' + String(payload.raw).slice(0, 200));
+      (payload?.warnings || []).forEach(w => parts.push(w));
+      throw new Error(parts.filter(Boolean).join(' — '));
+    }
+
+    MENU_DRAFT = (payload.items || []).map((it, i) => ({ ...it, _id: i, _keep: true }));
+    (payload.warnings || []).forEach(w => showToast(w));
+    if (payload.truncated) showToast('That menu was long — check the end of the list for missing items.');
     renderMenuPreview();
     setMenuStatus('', '');
   } catch (e) {
@@ -744,10 +790,19 @@ async function commitMenuDraft() {
   const items = MENU_DRAFT.filter(i => i._keep && Number(i.price) > 0);
   if (!items.length) { setMenuStatus('Add a price to at least one item before saving.', 'error'); return; }
   setMenuStatus('Saving your menu…', 'loading');
-  const { data, error } = await sb.functions.invoke('ordertaker-parse-menu', {
+  let { data, error } = await sb.functions.invoke('ordertaker-parse-menu', {
     body: { restaurant_id: RESTAURANT_ID, mode: 'commit', items, replace: true },
   });
-  if (error || data?.error) { setMenuStatus('Could not save: ' + (data?.error || error.message), 'error'); return; }
+  let payload = data;
+  if (error && typeof error.context?.json === 'function') {
+    try { payload = await error.context.json(); } catch (_) { /* keep generic */ }
+  }
+  if (payload?.error || error) {
+    const skipped = (payload?.skipped || []).slice(0, 3).map(s => s.name).join(', ');
+    setMenuStatus('Could not save: ' + (payload?.error || error.message) + (skipped ? ' (' + skipped + '…)' : ''), 'error');
+    return;
+  }
+  data = payload;
 
   MENU_DRAFT = [];
   renderMenuPreview();
