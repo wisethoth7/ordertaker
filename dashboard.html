@@ -213,6 +213,21 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <div id="schedule-modes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
 
   <!-- CUSTOM HOURS GRID -->
+  <!-- Shown for busy_hours: peak windows come from lunch_hours + dinner_hours. -->
+  <div id="busy-info" style="display:none;background:var(--card2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+    Agent answers during <strong style="color:var(--text)">Lunch</strong> and <strong style="color:var(--text)">Dinner</strong> only — when your phone rings most. Calls outside those windows hear your closed message.
+    <div style="margin-top:8px">Those windows are your Lunch and Dinner hours below — edit them and save to change when the agent picks up.</div>
+  </div>
+
+  <!-- Shown for custom: the agent's own answering windows, separate from opening hours. -->
+  <div id="agent-custom-hours" style="display:none;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
+      Set exactly when the agent should answer. These are independent of your opening hours — use them if the agent should cover different times to when you're open.
+    </div>
+    <div id="agent-hours-grid"></div>
+    <button onclick="saveAgentCustomHours()" class="action-btn" style="font-size:12px;padding:8px 16px;margin-top:4px">Save Agent Hours</button>
+  </div>
+
   <div id="custom-hours" style="display:none">
     <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px 10px;align-items:center;font-size:12px;margin-bottom:12px" id="hours-grid">
     </div>
@@ -1471,11 +1486,14 @@ async function toggleAlertPref(col) {
   showToast(next ? 'Turned on' : 'Turned off');
 }
 
+// Mirrors ot_agent_schedule_mode_chk, the single CHECK constraint on the column.
 const SCHEDULE_MODES = [
-  { id: 'always',         label: 'Always on',            desc: 'The agent answers every call, 24/7.' },
-  { id: 'business_hours', label: 'During business hours', desc: 'Answers only while you\'re open. Outside those hours callers hear your closed message.' },
-  { id: 'after_hours',    label: 'After hours only',      desc: 'You take calls while open; the agent covers nights and closed days.' },
-  { id: 'off',            label: 'Off',                   desc: 'The agent never answers. Calls forward to your own line instead.' },
+  { id: 'always',         label: 'Always on',             desc: 'The agent answers every call, 24/7.' },
+  { id: 'business_hours', label: 'During business hours',  desc: 'Answers only while you\'re open. Outside those hours callers hear your closed message.' },
+  { id: 'busy_hours',     label: 'Busy hours only',        desc: 'Answers during Lunch and Dinner only — saves your included minutes for peak times.' },
+  { id: 'custom',         label: 'Custom hours',           desc: 'You choose exactly which windows the agent answers in.' },
+  { id: 'after_hours',    label: 'After hours only',       desc: 'You take calls while open; the agent covers nights and closed days.' },
+  { id: 'off',            label: 'Off',                    desc: 'The agent never answers. Calls forward to your own line instead.' },
 ];
 let SCHEDULE_MODE = 'always';
 
@@ -1496,13 +1514,84 @@ function renderScheduleModes() {
       </div>
     </div>`;
   }).join('');
-  // Hours only matter for the two windowed modes.
+  // Each mode reveals only the editor it actually uses.
   const ch = document.getElementById('custom-hours');
+  const busy = document.getElementById('busy-info');
+  const agentCustom = document.getElementById('agent-custom-hours');
+
+  // business_hours / after_hours / busy_hours all read the opening-hours grid
+  // (busy_hours specifically uses its Lunch and Dinner windows).
+  const needsOpeningHours = ['business_hours', 'after_hours', 'busy_hours'].includes(SCHEDULE_MODE);
   if (ch) {
-    const needsHours = SCHEDULE_MODE === 'business_hours' || SCHEDULE_MODE === 'after_hours';
-    ch.style.display = needsHours ? 'block' : 'none';
-    if (needsHours) buildHoursGrid();
+    ch.style.display = needsOpeningHours ? 'block' : 'none';
+    if (needsOpeningHours) buildHoursGrid();
   }
+  if (busy) busy.style.display = SCHEDULE_MODE === 'busy_hours' ? 'block' : 'none';
+  if (agentCustom) {
+    const isCustom = SCHEDULE_MODE === 'custom';
+    agentCustom.style.display = isCustom ? 'block' : 'none';
+    if (isCustom) buildAgentHoursGrid();
+  }
+}
+
+// ── Custom mode: the agent's own answering windows ────────────────────────────
+// Stored in ot_restaurants.agent_custom_hours, same shape as lunch_hours /
+// dinner_hours: { mon: { open, close, enabled }, ... } with 3-letter day keys.
+let agentCustomHours = null;
+
+function defaultAgentHours() {
+  const out = {};
+  DAYS.forEach(d => { out[d] = { open: '17:00', close: '23:00', enabled: true }; });
+  return out;
+}
+
+function buildAgentHoursGrid() {
+  const grid = document.getElementById('agent-hours-grid');
+  if (!grid) return;
+  if (!agentCustomHours) agentCustomHours = defaultAgentHours();
+  grid.innerHTML = DAYS.map(d => {
+    const h = agentCustomHours[d] || { open: '', close: '', enabled: false };
+    return `
+      <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-weight:800;font-size:13px">${DAY_LABELS[d]}</div>
+          <div class="hours-toggle ${h.enabled ? 'on' : ''}" id="atog-${d}" onclick="toggleAgentDay('${d}')"><div class="knob"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:54px 1fr 1fr;gap:6px;align-items:center">
+          <div style="font-size:11px;color:var(--text2);font-weight:700">Answer</div>
+          <input type="time" id="aopen-${d}"  value="${h.open || ''}"  onchange="updateAgentHour('${d}')">
+          <input type="time" id="aclose-${d}" value="${h.close || ''}" onchange="updateAgentHour('${d}')">
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleAgentDay(d) {
+  if (!agentCustomHours) agentCustomHours = defaultAgentHours();
+  agentCustomHours[d].enabled = !agentCustomHours[d].enabled;
+  const t = document.getElementById('atog-' + d);
+  if (t) t.classList.toggle('on', agentCustomHours[d].enabled);
+}
+
+function updateAgentHour(d) {
+  if (!agentCustomHours) agentCustomHours = defaultAgentHours();
+  agentCustomHours[d].open = document.getElementById('aopen-' + d).value;
+  agentCustomHours[d].close = document.getElementById('aclose-' + d).value;
+}
+
+async function saveAgentCustomHours() {
+  if (!RESTAURANT_ID) return;
+  if (!agentCustomHours) agentCustomHours = defaultAgentHours();
+  // A day switched on with no times would silently never answer — catch it here.
+  const broken = DAYS.filter(d => agentCustomHours[d].enabled
+    && !(agentCustomHours[d].open && agentCustomHours[d].close));
+  if (broken.length) {
+    showToast(`Add both times for ${broken.map(d => DAY_LABELS[d]).join(', ')}, or switch those days off.`);
+    return;
+  }
+  const { error } = await sb.from('ot_restaurants')
+    .update({ agent_custom_hours: agentCustomHours }).eq('id', RESTAURANT_ID);
+  showToast(error ? 'Could not save agent hours: ' + error.message : 'Agent hours saved');
 }
 
 async function setScheduleMode(mode) {
@@ -1649,7 +1738,7 @@ async function loadScheduleSettings() {
   let data, error;
   try {
     ({ data, error } = await sb.from('ot_restaurants')
-      .select('agent_active,agent_schedule_mode,alert_sound_enabled,alert_repeat_until_ack,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
+      .select('agent_active,agent_schedule_mode,agent_custom_hours,alert_sound_enabled,alert_repeat_until_ack,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
       .eq('id', RESTAURANT_ID).single());
   } catch (e) { error = e; }
 
@@ -1665,6 +1754,9 @@ async function loadScheduleSettings() {
   agentActive = data.agent_active !== false;
   spamEnabled = data.spam_protection !== false;
   SCHEDULE_MODE = data.agent_schedule_mode || (agentActive ? 'always' : 'off');
+  if (data.agent_custom_hours && typeof data.agent_custom_hours === 'object') {
+    agentCustomHours = { ...defaultAgentHours(), ...data.agent_custom_hours };
+  }
   ALERT_SOUND = data.alert_sound_enabled !== false;
   ALERT_REPEAT = data.alert_repeat_until_ack !== false;
   updateAgentToggleUI();
