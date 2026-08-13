@@ -123,7 +123,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 <header>
   <div class="logo" style="display:flex;align-items:center;gap:10px"><img src="icons/ot-icon-96.png" alt="" style="width:36px;height:36px;border-radius:8px"><span style="white-space:nowrap"><span style="color:var(--text)">Order</span><span style="color:var(--accent)">Taker</span></span> — Kitchen</div>
   <div class="status-row">
-    <span class="restaurant-name">Mario Kitchen · Jersey City, NJ</span>
+    <span class="restaurant-name"></span>
     <div class="live-badge"><span class="live-dot"></span> LIVE</div>
     <button onclick="showOnboarding()" style="background:rgba(255,107,53,.12);border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.5px">SETUP GUIDE</button>
     <button onclick="doSignOut()" style="background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.5px">LOG OUT</button>
@@ -221,7 +221,15 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
   <!-- ORDER ALERT PREFERENCES (also mirrored in the kitchen view header) -->
   <div style="font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--text2);margin:4px 0 8px">ORDER ALERTS</div>
-  <div id="alert-prefs-settings" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+  <div id="alert-prefs-settings" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+  <!-- Browser audio must be unlocked by a click before it will play on its own,
+       so this stays a button rather than a saved setting. It lives here with the
+       alert toggles — previously the same controls appeared in three places. -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Enable Sound Alerts</button>
+    <button onclick="testKitchenSound()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Test sound</button>
+  </div>
+  <div style="font-size:11.5px;color:var(--text2);margin:-6px 0 14px;line-height:1.5">Sound has to be switched on once per device — do this on the tablet you keep in the kitchen.</div>
 
   <!-- SPAM PROTECTION -->
   <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:10px;padding:11px 14px;margin-top:8px">
@@ -461,9 +469,6 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       <div style="font-size:13px;color:var(--text2);margin-top:3px">Live order queue — visible from across the kitchen</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button id="kitchen-alert-toggle" onclick="toggleKitchenAlerts()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">🔔 Enable Sound Alerts</button>
-      <div id="alert-prefs-kitchen" style="display:flex;flex-direction:column;gap:6px;min-width:270px"></div>
-      <button onclick="testKitchenSound()" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Test sound</button>
       <button id="kitchen-ack-btn" onclick="acknowledgeOrders()" style="display:none;background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;animation:pulse 1s infinite">⏹ New order — tap to acknowledge</button>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--green)">
         <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
@@ -506,6 +511,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 <!-- MENU PANEL -->
 <div id="panel-menu" style="display:none;padding:24px;max-width:760px;margin:0 auto">
 
+  <!-- Push health. ordertaker-tools swallows POS errors, so this infers failures
+       from orders that never got a pos_order_id back. -->
+  <div id="pos-health" style="display:none;margin-bottom:14px"></div>
+
   <!-- Connect your POS -->
   <div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;margin-bottom:14px">POS INTEGRATION</div>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px">
@@ -536,6 +545,7 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button onclick="savePosConnection()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Connect POS</button>
+        <button id="pos-test-btn" onclick="testPosConnection()" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;margin-left:8px">Test connection</button>
         <button onclick="disconnectPos()" id="pos-disconnect-btn" style="display:none;background:var(--card2);color:var(--red);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Disconnect</button>
       </div>
       <div id="pos-instructions" style="font-size:11px;color:var(--text2);line-height:1.7;margin-top:4px">
@@ -935,6 +945,55 @@ function renderPendingItems() {
     ).join('') + '</div>';
 }
 
+// ── POS health + connection test ──────────────────────────────────────────────
+// A successful push writes pos_order_id back onto the order, so orders left
+// without one are the ones the POS never accepted.
+async function loadPosHealth() {
+  const host = document.getElementById('pos-health');
+  if (!host || !RESTAURANT_ID) return;
+  const { data: rest } = await sb.from('ot_restaurants')
+    .select('pos_type, pos_connected').eq('id', RESTAURANT_ID).single();
+  if (!rest?.pos_type) { host.style.display = 'none'; return; }
+
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const { count: total } = await sb.from('ot_orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', RESTAURANT_ID).gte('created_at', since);
+  const { count: unsynced } = await sb.from('ot_orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', RESTAURANT_ID).gte('created_at', since).is('pos_order_id', null);
+
+  const bad = (unsynced || 0) > 0;
+  host.style.display = 'block';
+  host.innerHTML = `<div style="padding:14px 16px;border-radius:12px;
+      background:${bad ? 'rgba(255,107,53,.08)' : 'rgba(74,222,128,.08)'};
+      border:1px solid ${bad ? 'rgba(255,107,53,.35)' : 'rgba(74,222,128,.3)'}">
+    <div style="font-size:13px;font-weight:800;color:${bad ? 'var(--accent)' : 'var(--green)'}">
+      ${bad ? `⚠️ ${unsynced} of ${total} orders in the last 7 days did not reach ${escapeHtml(rest.pos_type)}`
+            : `✓ All ${total || 0} orders in the last 7 days reached ${escapeHtml(rest.pos_type)}`}</div>
+    ${bad ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5">Those orders are safe in OrderTaker — they just were not written to your POS. Run Test connection below; an expired token is the usual cause.</div>` : ''}
+  </div>`;
+}
+
+async function testPosConnection() {
+  const btn = document.getElementById('pos-test-btn');
+  if (!RESTAURANT_ID) return;
+  btn.disabled = true; const label = btn.textContent; btn.textContent = 'Testing…';
+  try {
+    let { data, error } = await sb.functions.invoke('ordertaker-pos-test', {
+      body: { restaurant_id: RESTAURANT_ID },
+    });
+    if (error && typeof error.context?.json === 'function') {
+      try { data = await error.context.json(); } catch (_) { /* fall through */ }
+    }
+    if (!data) { showToast('Could not reach the POS test service.'); return; }
+    showToast(data.message || data.error || (data.ok ? 'Connected.' : 'POS test failed.'));
+    if (data.detail) console.error('POS test detail:', data.detail);
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+
 async function saveMenuItems() {
   if (!menuItems.length || !RESTAURANT_ID) return;
   const btn = document.getElementById('menu-save-btn');
@@ -944,7 +1003,9 @@ async function saveMenuItems() {
     name: item.name,
     price: item.price,
     description: item.desc || null,
-    available: true,
+    // Column is is_available; `available` does not exist and rejected every insert.
+    is_available: true,
+    active: true,
   }));
   const { error } = await sb.from('ot_menu_items').insert(rows);
   btn.disabled = false;
@@ -1338,7 +1399,10 @@ function renderRestaurantSwitcher(currentId) {
   const host = document.querySelector('.restaurant-name');
   if (!host) return;
   document.getElementById('ot-rest-switcher')?.remove();
-  if (OWNED_RESTAURANTS.length < 2) return;
+  // One restaurant: no picker, just the name. Two or more: the picker shows the
+  // name, so keep the plain text hidden rather than printing it twice.
+  if (OWNED_RESTAURANTS.length < 2) { host.style.display = ''; return; }
+  host.style.display = 'none';
   const sel = document.createElement('select');
   sel.id = 'ot-rest-switcher';
   sel.style.cssText = 'margin-left:10px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer';
@@ -1382,7 +1446,7 @@ function renderAlertToggles() {
       'Play an alert sound on this device when an order arrives.') +
     alertSwitch(ALERT_REPEAT, "toggleAlertPref('alert_repeat_until_ack')", '🔁 Keep ringing until acknowledged',
       'Show a blocking pop-up that keeps ringing until a staff member presses “Got it”.');
-  ['alert-prefs-settings', 'alert-prefs-kitchen'].forEach(id => {
+  ['alert-prefs-settings'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
   });
@@ -1846,6 +1910,7 @@ async function loadPosState() {
       .eq('id', RESTAURANT_ID).single();
     if (data) hydratePosUI(data);
   } catch (e) { /* leave default 'Not connected' state */ }
+  loadPosHealth();
 }
 
 // ── SETUP CHECKLIST ──────────────────────────────────────────────────────────
