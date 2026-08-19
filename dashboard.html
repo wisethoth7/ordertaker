@@ -210,7 +210,9 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
   <!-- MODE SELECTOR — exactly one mode is active at a time. Each row has its own
        on/off control, but switching one on switches the others off. Persisted via
        ot_set_schedule_mode(), which keeps agent_active in sync server-side. -->
-  <div id="schedule-modes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+  <div id="schedule-modes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+  <!-- What the phone line is actually doing, so "off" can be checked without calling. -->
+  <div id="routing-state" style="display:none;padding:10px 13px;border-radius:10px;font-size:12px;font-weight:700;margin-bottom:14px"></div>
 
   <!-- CUSTOM HOURS GRID -->
   <!-- Shown for business_hours: the agent follows the opening-hours grid below. -->
@@ -218,11 +220,12 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
     The agent answers whenever you're open, using the opening hours below. Calls outside them hear your closed message.
   </div>
 
-  <!-- Shown for busy_hours and after_hours: the windows the agent answers in. -->
+  <!-- Per-mode answering windows. Each mode stores its own set. -->
   <div id="agent-answer-hours" style="display:none;margin-bottom:12px">
-    <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
-      Set the windows the agent should answer in. Switch a day off to send all its calls to your own line.
+    <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:4px">
+      Set the windows the agent should answer in. Switch a day off to send all its calls straight to your own line.
     </div>
+    <div id="answer-hours-intro" style="font-size:11.5px;color:var(--accent);font-weight:700;margin-bottom:10px"></div>
     <div id="answer-hours-grid"></div>
     <button onclick="saveAnswerHours()" class="action-btn" style="font-size:12px;padding:8px 16px;margin-top:4px">Save Answer Hours</button>
   </div>
@@ -303,18 +306,10 @@ input[type=time]{background:var(--card2);border:1px solid var(--border);border-r
 
 <!-- STAFF ALERT NUMBERS -->
 <div class="reservations" id="staffNumbersPanel">
-  <div class="res-header" style="display:flex;align-items:center;justify-content:space-between">
-    <span>📱 Staff Alert Numbers</span>
-    <button onclick="document.getElementById('addPhoneRow').style.display='flex'" style="background:var(--accent);color:#1a0a00;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer">+ Add Number</button>
-  </div>
-  <div style="font-size:12px;color:var(--text2);margin-bottom:10px">SMS + email alerts on every order, reservation, and callback request.</div>
-  <div id="staffPhonesList" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px">
-    <div style="padding:14px 18px;color:var(--text2);font-size:13px">Loading...</div>
-  </div>
-  <div id="addPhoneRow" style="display:none;gap:8px;margin-bottom:10px;align-items:center">
-    <input type="tel" id="newPhoneInput" placeholder="(732) 555-1234" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit">
-    <button onclick="addStaffPhone()" style="background:var(--accent);color:#1a0a00;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
-    <button onclick="document.getElementById('addPhoneRow').style.display='none'" style="background:var(--card2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer">✕</button>
+  <div class="res-header"><span>✉️ Staff Alert Emails</span></div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+    Email alerts on every order, reservation, and callback request — plus the kitchen screen and its blocking alert.
+    We don't send staff text messages.
   </div>
   <div style="font-size:12px;color:var(--text2);font-weight:700;margin:6px 0 8px">📧 Alert Emails</div>
   <div id="alertEmailsList" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px">
@@ -870,8 +865,8 @@ async function commitMenuDraft() {
   // An empty upsell_suggestion is why the agent never upsells, so say so here.
   const todo = [];
   if (f.needs_popular) todo.push('mark 3–5 bestsellers with ★');
-  if (f.missing_upsell) todo.push(`add an upsell note to ${f.missing_upsell} item${f.missing_upsell === 1 ? '' : 's'} (the agent can only upsell items that have one)`);
-  if (todo.length) msg += ' Next: ' + todo.join(', ') + '.';
+  if (f.missing_upsell) todo.push(`add a pairing to ${f.missing_upsell} item${f.missing_upsell === 1 ? '' : 's'} (the agent can only upsell items that have one)`);
+  if (todo.length) msg += ' Next, in the list below: ' + todo.join(', ') + '.';
   setMenuStatus(msg, 'success');
   await loadMenuItems();
 }
@@ -887,7 +882,7 @@ async function loadMenuItems() {
   if (!RESTAURANT_ID) return;
   const { data, error } = await sb
     .from('ot_menu_items')
-    .select('id,name,price,description,category,available')
+    .select('id,name,price,description,category,is_available,is_popular,upsell_suggestion')
     .eq('restaurant_id', RESTAURANT_ID)
     .order('category').order('name');
   if (!error) renderDbItems(data || []);
@@ -897,29 +892,81 @@ function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+let MENU_DB_ITEMS = [];
+
+// Bulk editor: an empty upsell_suggestion is why the agent never upsells, and
+// is_popular is what it uses to recommend. Both are editable inline here so an
+// owner can fill 40 items in one pass instead of one at a time.
 function renderDbItems(items) {
+  MENU_DB_ITEMS = items.map(i => ({ ...i, _dirty: false }));
   const el = document.getElementById('menu-item-list');
   if (!items.length) {
     el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:4px">No items yet — upload a file or add manually below.</div>';
     return;
   }
+  const missingUpsell = items.filter(i => !i.upsell_suggestion).length;
+  const popular = items.filter(i => i.is_popular).length;
+
+  const banner = (missingUpsell || popular < 3) ? `
+    <div style="padding:12px 14px;border-radius:10px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.3);margin-bottom:10px;font-size:12px;line-height:1.6;color:var(--text2)">
+      <strong style="color:var(--accent)">Your agent can only upsell what you give it.</strong><br>
+      ${missingUpsell ? `${missingUpsell} of ${items.length} items have no pairing suggestion. ` : ''}
+      ${popular < 3 ? `Only ${popular} marked as a bestseller — mark 3–5. ` : ''}
+      Fill these in below and press Save pairings.
+    </div>` : '';
+
   el.innerHTML =
     '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);margin-bottom:8px">' + items.length + ' ITEMS IN YOUR MENU</div>' +
+    banner +
     '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">' +
-    items.map(item =>
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,107,53,.07)">' +
-        '<div>' +
-          '<div style="font-size:13px;font-weight:700">' + escHtml(item.name) + '</div>' +
-          (item.description ? '<div style="font-size:11px;color:var(--text2)">' + escHtml(item.description) + '</div>' : '') +
-          (item.category ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--accent);margin-top:2px">' + escHtml(item.category) + '</div>' : '') +
+    items.map((item, idx) =>
+      '<div style="padding:12px 16px;border-bottom:1px solid rgba(255,107,53,.07)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+          '<div style="min-width:0">' +
+            '<div style="font-size:13px;font-weight:700">' + escHtml(item.name) + '</div>' +
+            (item.category ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--accent);margin-top:2px">' + escHtml(item.category) + '</div>' : '') +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
+            '<label style="font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer">' +
+              '<input type="checkbox" ' + (item.is_popular ? 'checked' : '') + ' onchange="menuFieldEdit(' + idx + ',\'is_popular\',this.checked)"> ★' +
+            '</label>' +
+            '<span style="font-size:13px;font-weight:800;color:var(--accent)">$' + Number(item.price).toFixed(2) + '</span>' +
+            '<span style="font-size:11px;font-weight:700;color:' + (item.is_available !== false ? 'var(--green)' : 'var(--text2)') + '">' + (item.is_available !== false ? 'On' : 'Off') + '</span>' +
+          '</div>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:12px">' +
-          '<span style="font-size:13px;font-weight:800;color:var(--accent)">$' + Number(item.price).toFixed(2) + '</span>' +
-          '<span style="font-size:11px;font-weight:700;color:' + (item.available !== false ? 'var(--green)' : 'var(--red)') + '">' + (item.available !== false ? 'On' : 'Off') + '</span>' +
-        '</div>' +
+        '<input value="' + escHtml(item.upsell_suggestion || '') + '" placeholder="Pairs well with… e.g. Add fries and a drink for $4" ' +
+          'oninput="menuFieldEdit(' + idx + ',\'upsell_suggestion\',this.value)" ' +
+          'style="width:100%;margin-top:8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:inherit">' +
       '</div>'
     ).join('') +
-    '</div>';
+    '</div>' +
+    '<button onclick="saveMenuPairings()" id="save-pairings-btn" style="margin-top:10px;padding:10px 20px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer">Save pairings</button>';
+}
+
+function menuFieldEdit(idx, field, value) {
+  const it = MENU_DB_ITEMS[idx];
+  if (!it) return;
+  it[field] = value;
+  it._dirty = true;
+}
+
+async function saveMenuPairings() {
+  const dirty = MENU_DB_ITEMS.filter(i => i._dirty);
+  if (!dirty.length) { showToast('Nothing changed yet'); return; }
+  const btn = document.getElementById('save-pairings-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  let failed = 0;
+  for (const it of dirty) {
+    const { error } = await sb.from('ot_menu_items').update({
+      upsell_suggestion: (it.upsell_suggestion || '').trim() || null,
+      is_popular: !!it.is_popular,
+    }).eq('id', it.id);
+    if (error) { failed++; console.error('pairing save failed', it.id, error.message); }
+    else it._dirty = false;
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save pairings'; }
+  showToast(failed ? `${dirty.length - failed} saved, ${failed} failed` : `Saved ${dirty.length} item${dirty.length === 1 ? '' : 's'}`);
+  await loadMenuItems();
 }
 
 // ── manual entry ──────────────────────────────────────────────────────────────
@@ -1483,8 +1530,9 @@ const SCHEDULE_MODES = [
   { id: 'after_hours',    label: 'After hours only',      desc: 'You take calls yourself the rest of the time; the agent covers the windows you set below.' },
   { id: 'off',            label: 'Off',                   desc: 'The agent never answers. Calls forward to your own line instead.' },
 ];
-// busy_hours and after_hours both run off agent_answer_hours.
-const MODES_USING_ANSWER_HOURS = ['busy_hours', 'after_hours'];
+// Every answering mode has its own windows in agent_answer_hours. open_hours is
+// NOT used for this — it is customer-facing info the agent reads out.
+const MODES_USING_ANSWER_HOURS = ['business_hours', 'busy_hours', 'after_hours'];
 let SCHEDULE_MODE = 'after_hours';
 
 function renderScheduleModes() {
@@ -1510,45 +1558,66 @@ function renderScheduleModes() {
   const busy = document.getElementById('busy-info');
   const answer = document.getElementById('agent-answer-hours');
 
-  const usesOpeningHours = SCHEDULE_MODE === 'business_hours';
   const usesAnswerHours = MODES_USING_ANSWER_HOURS.includes(SCHEDULE_MODE);
 
+  // The opening-hours grid is customer-facing info, kept visible regardless of
+  // mode — it is what the agent tells callers, not when it picks up.
   if (ch) {
-    ch.style.display = usesOpeningHours ? 'block' : 'none';
-    if (usesOpeningHours) buildHoursGrid();
+    ch.style.display = 'block';
+    buildHoursGrid();
   }
-  if (busy) busy.style.display = usesOpeningHours ? 'block' : 'none';
+  if (busy) busy.style.display = 'none';
   if (answer) {
     answer.style.display = usesAnswerHours ? 'block' : 'none';
     if (usesAnswerHours) buildAnswerHoursGrid();
   }
 }
 
-// ── Answer windows for busy_hours / after_hours ───────────────────────────────
-// Stored in ot_restaurants.agent_answer_hours via ot_set_answer_hours():
-//   { "monday": { "start": "17:00", "end": "23:00", "enabled": true }, ... }
-// Full day names and start/end — deliberately not the 3-letter open/close shape
-// used by open_hours, because this column is read by the edge function.
+// ── Per-mode answer windows ───────────────────────────────────────────────────
+// ot_restaurants.agent_answer_hours is keyed BY MODE, so each mode keeps its own
+// windows and editing one never disturbs another:
+//   { "business_hours": { "monday": { "start", "end", "enabled" }, ... },
+//     "busy_hours": {...}, "after_hours": {...} }
+// Read with ot_get_answer_hours(rid, mode), write with ot_set_answer_hours(rid, mode, jsonb).
+// open_hours is separate — that is customer-facing info the agent reads out, not
+// when it answers.
 const ANSWER_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-let answerHours = null;
+const MODE_DEFAULT_WINDOW = {
+  business_hours: { start: '11:00', end: '22:00' },
+  busy_hours:     { start: '17:00', end: '21:00' },
+  after_hours:    { start: '22:00', end: '02:00' },
+};
+let answerHoursByMode = {};
 
-function defaultAnswerHours() {
+function defaultAnswerHours(mode) {
+  const w = MODE_DEFAULT_WINDOW[mode] || { start: '17:00', end: '23:00' };
   const out = {};
-  ANSWER_DAYS.forEach(d => { out[d] = { start: '17:00', end: '23:00', enabled: true }; });
+  ANSWER_DAYS.forEach(d => { out[d] = { start: w.start, end: w.end, enabled: true }; });
   return out;
+}
+
+function hoursForMode(mode) {
+  if (!answerHoursByMode[mode] || !Object.keys(answerHoursByMode[mode]).length) {
+    answerHoursByMode[mode] = defaultAnswerHours(mode);
+  }
+  return answerHoursByMode[mode];
 }
 
 function buildAnswerHoursGrid() {
   const grid = document.getElementById('answer-hours-grid');
-  if (!grid) return;
-  if (!answerHours) answerHours = defaultAnswerHours();
+  if (!grid || !MODES_USING_ANSWER_HOURS.includes(SCHEDULE_MODE)) return;
+  const mode = SCHEDULE_MODE;
+  const hrs = hoursForMode(mode);
+  const label = (SCHEDULE_MODES.find(m => m.id === mode) || {}).label || mode;
+  const intro = document.getElementById('answer-hours-intro');
+  if (intro) intro.textContent = `These windows apply to “${label}” only. Your other modes keep their own hours.`;
   grid.innerHTML = ANSWER_DAYS.map(d => {
-    const h = answerHours[d] || { start: '', end: '', enabled: false };
-    const label = d.charAt(0).toUpperCase() + d.slice(1);
+    const h = hrs[d] || { start: '', end: '', enabled: false };
+    const dayLabel = d.charAt(0).toUpperCase() + d.slice(1);
     return `
       <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-weight:800;font-size:13px">${label}</div>
+          <div style="font-weight:800;font-size:13px">${dayLabel}</div>
           <div class="hours-toggle ${h.enabled ? 'on' : ''}" id="antog-${d}" onclick="toggleAnswerDay('${d}')"><div class="knob"></div></div>
         </div>
         <div style="display:grid;grid-template-columns:54px 1fr 1fr;gap:6px;align-items:center">
@@ -1561,32 +1630,36 @@ function buildAnswerHoursGrid() {
 }
 
 function toggleAnswerDay(d) {
-  if (!answerHours) answerHours = defaultAnswerHours();
-  answerHours[d].enabled = !answerHours[d].enabled;
+  const hrs = hoursForMode(SCHEDULE_MODE);
+  hrs[d].enabled = !hrs[d].enabled;
   const t = document.getElementById('antog-' + d);
-  if (t) t.classList.toggle('on', answerHours[d].enabled);
+  if (t) t.classList.toggle('on', hrs[d].enabled);
 }
 
 function updateAnswerHour(d) {
-  if (!answerHours) answerHours = defaultAnswerHours();
-  answerHours[d].start = document.getElementById('anstart-' + d).value;
-  answerHours[d].end = document.getElementById('anend-' + d).value;
+  const hrs = hoursForMode(SCHEDULE_MODE);
+  hrs[d].start = document.getElementById('anstart-' + d).value;
+  hrs[d].end = document.getElementById('anend-' + d).value;
 }
 
 async function saveAnswerHours() {
   if (!RESTAURANT_ID) return;
-  if (!answerHours) answerHours = defaultAnswerHours();
+  const mode = SCHEDULE_MODE;
+  if (!MODES_USING_ANSWER_HOURS.includes(mode)) return;
+  const hrs = hoursForMode(mode);
   // A day switched on with no times would look active but never answer.
-  const broken = ANSWER_DAYS.filter(d => answerHours[d].enabled && !(answerHours[d].start && answerHours[d].end));
+  const broken = ANSWER_DAYS.filter(d => hrs[d].enabled && !(hrs[d].start && hrs[d].end));
   if (broken.length) {
     showToast(`Add both times for ${broken.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}, or switch those days off.`);
     return;
   }
   const { data, error } = await sb.rpc('ot_set_answer_hours', {
-    p_restaurant_id: RESTAURANT_ID, p_hours: answerHours,
+    p_restaurant_id: RESTAURANT_ID, p_mode: mode, p_hours: hrs,
   });
   if (error) { showToast('Could not save answer hours: ' + error.message); return; }
   showToast(String(data ?? 'Answer hours updated.'));
+  // Routing depends on these windows, so re-evaluate immediately.
+  syncAgentRouting();
 }
 
 async function setScheduleMode(mode) {
@@ -1608,6 +1681,50 @@ async function setScheduleMode(mode) {
   agentActive = mode !== 'off';
   updateAgentToggleUI();
   showToast('Agent schedule: ' + (SCHEDULE_MODES.find(m => m.id === mode)?.label || mode));
+  // Apply the change to the phone line immediately rather than waiting for the
+  // 5-minute cron — the owner expects the toggle to take effect now.
+  syncAgentRouting();
+}
+
+// Asks the router to re-evaluate this restaurant and set the Vapi number to
+// answer or forward. Cron does this every 5 minutes; this makes it immediate.
+async function syncAgentRouting() {
+  if (!RESTAURANT_ID) return;
+  try {
+    const { data, error } = await sb.functions.invoke('ordertaker-routing', {
+      body: { restaurant_id: RESTAURANT_ID },
+    });
+    if (error) { console.error('routing sync failed', error); return; }
+    const r = (data?.results || [])[0];
+    if (r) { ROUTING_STATE = r.state; renderRoutingState(); }
+  } catch (e) { console.error('routing sync failed', e); }
+}
+
+let ROUTING_STATE = null;
+
+// Shows what the phone line is actually doing right now, so "off" is verifiable
+// without placing a call.
+function renderRoutingState() {
+  const el = document.getElementById('routing-state');
+  if (!el) return;
+  if (!ROUTING_STATE) { el.style.display = 'none'; return; }
+  const s = String(ROUTING_STATE);
+  const answering = s === 'answering';
+  const forwarding = s === 'forwarding';
+  const skipped = s.startsWith('skipped:');
+  const label = answering ? '📞 Calls are reaching your AI agent right now'
+    : forwarding ? '↪️ Calls are forwarding to your staff line right now'
+    : skipped ? 'Call routing not active yet — ' + ({
+        'skipped:no_linked_number': 'this restaurant has no OrderTaker number assigned yet.',
+        'skipped:no_fallback_number': 'add a staff transfer number so calls have somewhere to go.',
+        'skipped:no_windows_for_mode': 'set and save the answer windows above for this mode.',
+      }[s] || s.replace('skipped:', ''))
+    : 'Routing error — ' + s;
+  el.style.display = 'block';
+  el.style.background = answering ? 'rgba(74,222,128,.08)' : forwarding ? 'rgba(250,204,21,.08)' : 'var(--card2)';
+  el.style.border = '1px solid ' + (answering ? 'rgba(74,222,128,.3)' : forwarding ? 'rgba(250,204,21,.3)' : 'var(--border)');
+  el.style.color = answering ? 'var(--green)' : forwarding ? 'var(--yellow)' : 'var(--text2)';
+  el.textContent = label;
 }
 
 function buildHoursGrid() {
@@ -1616,8 +1733,9 @@ function buildHoursGrid() {
   grid.style.display = 'block';
   grid.innerHTML = `
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-      Set two service windows per day — e.g. <strong style="color:var(--text)">Lunch</strong> and <strong style="color:var(--text)">Dinner</strong>.
-      Leave a window blank to skip it. Toggle a day off to send all its calls to the closed message.
+      <strong style="color:var(--text)">Your opening hours</strong> — what the agent tells callers when they ask if you're open.
+      These do <em>not</em> control when the agent answers; that's set per mode above.
+      Leave a window blank to skip it.
     </div>` + DAYS.map(d => {
     const h = customHours[d] || {open:'11:00',close:'14:00',open2:'17:00',close2:'21:00',enabled:true};
     return `
@@ -1734,7 +1852,7 @@ async function loadScheduleSettings() {
   let data, error;
   try {
     ({ data, error } = await sb.from('ot_restaurants')
-      .select('agent_active,agent_schedule_mode,agent_answer_hours,alert_sound_enabled,alert_repeat_until_ack,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
+      .select('agent_active,agent_schedule_mode,agent_answer_hours,routing_state,alert_sound_enabled,alert_repeat_until_ack,spam_protection,open_hours,lunch_hours,dinner_hours,minutes_used,minutes_included,plan,fallback_number,forward_number,auto_forward_when_off,vapi_phone_number,twilio_phone,telnyx_phone')
       .eq('id', RESTAURANT_ID).single());
   } catch (e) { error = e; }
 
@@ -1750,14 +1868,16 @@ async function loadScheduleSettings() {
   agentActive = data.agent_active !== false;
   spamEnabled = data.spam_protection !== false;
   SCHEDULE_MODE = data.agent_schedule_mode || (agentActive ? 'after_hours' : 'off');
-  if (data.agent_answer_hours && typeof data.agent_answer_hours === 'object') {
-    answerHours = { ...defaultAnswerHours(), ...data.agent_answer_hours };
-  }
+  // Keyed by mode; each mode falls back to its own sensible default when unset.
+  answerHoursByMode = (data.agent_answer_hours && typeof data.agent_answer_hours === 'object')
+    ? { ...data.agent_answer_hours } : {};
   ALERT_SOUND = data.alert_sound_enabled !== false;
   ALERT_REPEAT = data.alert_repeat_until_ack !== false;
   updateAgentToggleUI();
   renderScheduleModes();
   renderAlertToggles();
+  ROUTING_STATE = data.routing_state || null;
+  renderRoutingState();
 
   const spamKnob = document.getElementById('spamKnob');
   const spamTog = document.getElementById('spamToggle');
@@ -1906,7 +2026,10 @@ async function saveAlertEmails() {
 }
 
 async function addStaffPhone() {
+  // Staff SMS was removed: no SMS provider is configured, so staff texts silently
+  // did nothing. Kept inert in case anything still references it.
   const input = document.getElementById('newPhoneInput');
+  if (!input) return;
   const raw = input.value.replace(/\D/g, '');
   if (raw.length < 10) { showToast('Enter a valid 10-digit number'); return; }
   const formatted = (raw.length === 11 && raw[0] === '1') ? `+${raw}` : `+1${raw.slice(-10)}`;
@@ -2030,7 +2153,7 @@ const READINESS_FIX = {
   hours:            { label: 'Opening hours',          fix: "switchTab('orders')", cta: 'Set hours →' },
   open_hours:       { label: 'Opening hours',          fix: "switchTab('orders')", cta: 'Set hours →' },
   menu:             { label: 'Menu',                   fix: "switchTab('menu')",   cta: 'Upload menu →' },
-  staff_phone_list: { label: 'Staff SMS alerts',       fix: "switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)", cta: 'Add numbers →' },
+  staff_phone_list: { label: 'Staff SMS alerts (not used — we email staff instead)', fix: '', cta: '' },
   staff_email_list: { label: 'Staff email alerts',     fix: "switchTab('orders');setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)", cta: 'Add emails →' },
   billing:          { label: 'Billing',                fix: "switchTab('billing')", cta: 'Open Billing →' },
   account_link:     { label: 'Account link',           fix: '', cta: '' },
@@ -2044,6 +2167,26 @@ const SEV_STYLE = {
   WARN:    { color: 'var(--yellow)', bg: 'rgba(250,204,21,.06)', border: 'rgba(250,204,21,.30)', icon: '⚠️', word: 'Needs attention' },
   INFO:    { color: 'var(--text2)', bg: 'var(--card)',           border: 'var(--border)',        icon: 'ℹ️', word: 'Info' },
 };
+
+// Only reachable when ot_readiness_check returns no BLOCKER rows.
+async function goLive() {
+  const btn = document.getElementById('go-live-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Going live…'; }
+  const mode = SCHEDULE_MODE === 'off' ? 'business_hours' : SCHEDULE_MODE;
+  const { data, error } = await sb.rpc('ot_set_schedule_mode', { p_restaurant_id: RESTAURANT_ID, p_mode: mode });
+  if (error || (typeof data === 'string' && !data.startsWith('Agent schedule set to'))) {
+    showToast(error?.message || data || 'Could not go live');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Go Live — start taking calls'; }
+    return;
+  }
+  SCHEDULE_MODE = mode;
+  agentActive = true;
+  updateAgentToggleUI();
+  renderScheduleModes();
+  await syncAgentRouting();
+  showToast("You're live — your agent is taking calls.");
+  renderChecklist();
+}
 
 async function renderChecklist() {
   const host = document.getElementById('checklist-items');
@@ -2101,7 +2244,17 @@ async function renderChecklist() {
 
   const support = `<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6">Items we handle for you (agent routing, your OrderTaker number) are set up by our team — email <a href="mailto:support@niledreamsdigital.com" style="color:var(--accent)">support@niledreamsdigital.com</a> if one stays flagged.</div>`;
 
-  host.innerHTML = headline
+  // Go Live is only offered once nothing is blocking — an agent taking real
+  // calls with a broken setup is worse than one that isn't live yet.
+  const goLive = blockers.length
+    ? `<button disabled title="Fix the blocking items first" style="width:100%;padding:14px;margin-bottom:16px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text2);font-size:14px;font-weight:800;cursor:not-allowed">
+         Go Live — ${blockers.length} blocking item${blockers.length > 1 ? 's' : ''} to fix first
+       </button>`
+    : `<button onclick="goLive()" id="go-live-btn" style="width:100%;padding:14px;margin-bottom:16px;border-radius:12px;border:none;background:var(--green);color:#04210f;font-size:14px;font-weight:900;cursor:pointer">
+         🚀 Go Live — start taking calls
+       </button>`;
+
+  host.innerHTML = headline + goLive
     + [...blockers, ...warns].map(card).join('')
     + (infos.length ? `<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">${infos.map(card).join('')}</div>` : '')
     + support
@@ -2433,9 +2586,9 @@ const OB_STEPS = [
   },
   {
     icon: '📱',
-    title: 'Add Staff Alert Numbers',
-    body: "Add your phone number and your staff's so everyone gets an SMS the moment an order or reservation comes in.",
-    action: `<button onclick="closeOnboarding();setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)" style="width:100%;padding:11px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-weight:800;cursor:pointer;margin-top:12px">Jump to Staff Numbers ↓</button>`,
+    title: 'Add Staff Alert Emails',
+    body: "Add your email and your staff's so everyone is notified the moment an order or reservation comes in. The kitchen screen also alerts on this device.",
+    action: `<button onclick="closeOnboarding();setTimeout(()=>document.getElementById('staffNumbersPanel').scrollIntoView({behavior:'smooth'}),200)" style="width:100%;padding:11px;background:var(--accent);color:#1a0a00;border:none;border-radius:9px;font-weight:800;cursor:pointer;margin-top:12px">Jump to Staff Emails ↓</button>`,
   },
   {
     icon: '📞',
@@ -2568,7 +2721,6 @@ async function init() {
     document.querySelector('.restaurant-name').textContent = 'Welcome';
     const resList = document.getElementById('res-list');
     if (resList) resList.innerHTML = `<div class="res-row"><div class="res-info"><div class="res-meta">No reservations yet</div></div></div>`;
-    const sp = document.getElementById('staffPhonesList'); if (sp) sp.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No numbers yet.</div>';
     const ae = document.getElementById('alertEmailsList'); if (ae) ae.innerHTML = '<div style="padding:14px 18px;color:var(--text2);font-size:13px">No alert emails yet.</div>';
     const mu = document.getElementById('minutesUsed'); if (mu) mu.textContent = 'Usage will appear once your agent starts taking calls.';
     updateAgentToggleUI();
