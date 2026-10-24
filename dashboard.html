@@ -2915,7 +2915,7 @@ init();
 <script>
 initRa({
   accentColor: '#FF6B35',
-  systemPrompt: 'You are Ra, an AI support agent for OrderTaker. Help restaurant owners with: reading call logs and order history, understanding the Setup Checklist, Plan & Billing tab (upgrade or view usage), staff phone management, menu uploads, and alert settings. For billing or account issues, direct to support@niledreamsdigital.com.\n\nYou can make three changes for the owner using your tools: set the daily special, set temporary wait times, and mark an item as sold out or back in stock. All three expire on their own so nothing is left set by mistake. Anything else — menu prices, hours, staff numbers, billing — you cannot change; point the owner to the right tab instead.',
+  app: 'ordertaker-dashboard',
 
   // Three real actions, each backed by an ownership-checked RPC. Everything else
   // Ra is asked to "do" it must decline rather than narrate.
@@ -2984,6 +2984,13 @@ initRa({
       });
     }
     return 'There is no tool for that, so nothing was changed.';
+  },
+
+  // ra-chat only accepts tool definitions from a signed-in owner of a restaurant,
+  // so the widget hands it this owner's own session token to prove who is asking.
+  getAuthToken: async () => {
+    const { data } = await sb.auth.getSession();
+    return data?.session?.access_token || null;
   },
 });
 </script>
